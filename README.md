@@ -10,7 +10,7 @@
 
 **AIResume** 是一个开源的简历制作平台，帮助用户轻松创建专业简历，融合 AI 技术，辅助用户润色简历。我们欢迎对前端技术感兴趣的朋友参与 **`模板开发`**！
 
-- **技术栈**：Vue 3 + Vite + TypeScript
+- **技术栈**：Vue 3 + Vite + TypeScript + Ant Design Vue
 - **项目预览**：[AIResume 预览地址](https://resume.404.pub/) （部署于 Cloudflare Pages）
 
 ## 🎨 项目预览
@@ -51,7 +51,10 @@ npm run dev
 
 ## 🔥欢迎有前端能力的朋友开发简历模板加入项目
 
-开发方式：复制一份`/template/dev`目录，然后按照里面的数据挂载到前端即可，然后完善`config.json`和`preview.jpg`（注意，config.json中的id务必是唯一值），最后，请在`templates.json`文件中加上您开发的模板信息（直接复制`config.json`的即可！）
+简历模板开发方式：
+1. 复制一份`/template/dev`目录，然后按照里面的数据挂载到前端即可。
+2. 然后完善您模板目录下的`config.json`和`preview.jpg`（注意，config.json中的id务必是唯一值）
+3. 最后，请在`/public/templates.json`文件中加上您开发的模板信息（直接复制`config.json`的即可！）
 
 ## 🌍 使用 Cloudflare Worker 进行 API 反向代理
 
@@ -80,6 +83,8 @@ https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 
 ## 🎯 已完成功能
 
+主要功能：
+
 - ✅ 简历编辑，数据前端持久化
 
 - ✅ 简历导出为 PDF
@@ -88,9 +93,13 @@ https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 
 - ✅ 多套简历模板，支持前端开发者共创
 
+- ✅ 简历撰写的时候，AI可以进行润色
+
 - ✅ AI简历深挖 利用ai 基于单个项目或者经历的长对话对简历进行深度优化
 
 - ✅ AI模拟面试 针对单一项目或者经历对用户进行面试拷打
+
+细节功能：
 
 - ✅ 模板主题色切换
 
@@ -110,14 +119,14 @@ https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 
 - ✅ 模板市场展示
 
-
+- ✅ 模板信息展示作者的昵称以及网站
 
 ------
 
 ## 📝 待实现功能
 
 - [ ] **AI 面试官**（大模型读取简历，进行实时对话 / 语音通话）
-- [ ] **可视化简历设计**（支持非前端用户拖拽设计简历）
+- [ ] **可视化简历设计**（支持非前端开发者用户拖拽设计简历）
 - [ ] **简历布局调整**（左侧拖拽调整右侧内容块顺序）
 - [ ] **数据隐藏功能**（支持隐藏部分信息，但数据仍保留）
 

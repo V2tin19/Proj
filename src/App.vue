@@ -37,7 +37,7 @@ onMounted(async () => {
       },
     }">
       <router-view v-slot="{ Component }">
-        <keep-alive>
+        <keep-alive include="aiDeep">
           <component :is="Component" />
         </keep-alive>
       </router-view>

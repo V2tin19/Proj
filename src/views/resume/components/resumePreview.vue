@@ -10,8 +10,6 @@
     <!-- 切换主题色 -->
     <input class="changeColor" type="color" v-model="themeColor"
       @change="(e) => handleThemeChange((e.target as HTMLInputElement).value)" />
-
-    <!-- 导出按钮 -->
     <a-button type="primary" @click="exportToPDF" id="export-button">导出PDF</a-button>
   </div>
   <div class="preview" ref="resumePreview" @mousedown="startDragging" @wheel.prevent="handleZoom">
@@ -36,7 +34,7 @@ import { createApp } from 'vue';
 const templateStore = useTemplateStore();
 const themeColor = computed({
   get: () => templateStore.themeColor,
-  set: (value) => templateStore.setThemeColor(value),
+  set: (value) => templateStore.themeColor = value,
 });
 // 生成的色阶对象
 const colorShades = ref(generateColorShades(themeColor.value));
@@ -46,13 +44,8 @@ watch(themeColor, (newColor) => {
 }, { immediate: true });
 // 处理主题色变化
 const handleThemeChange = (color: string) => {
-  templateStore.setThemeColor(color);
+  templateStore.themeColor = color;
 };
-
-
-
-
-
 // 多模板切换部分功能
 // 动态导入所有模板组件
 const templateModules = import.meta.glob('../../../template/**/index.vue');
@@ -73,7 +66,7 @@ onMounted(async () => {
     } else if (templates.value.length > 0) {
       // 否则默认选中第一个模板
       selectedTemplateId.value = templates.value[0].id;
-      templateStore.setTemplate(templates.value[0]);
+      templateStore.currentTemplate = templates.value[0];
     }
     loadCurrentTemplate();
   } catch (error) {
@@ -91,7 +84,7 @@ const handleTemplateChange = (id: string | null) => {
   if (!id) return;
   const selectedTemplate = templates.value.find(t => t.id === id);
   if (selectedTemplate) {
-    templateStore.setTemplate(selectedTemplate);
+    templateStore.currentTemplate = selectedTemplate;
     loadCurrentTemplate();
   }
 };
@@ -188,12 +181,9 @@ const state = reactive({
 // 初始化预览和内容尺寸
 const updateBounds = async () => {
   await nextTick(); // 确保 DOM 已更新
-
   if (resumePreview.value) {
     const container = resumePreview.value;
     const content = container.querySelector(".resume-content") as HTMLElement;
-
-
     if (content) {
       state.previewWidth = container.clientWidth;
       state.previewHeight = container.clientHeight;
@@ -223,7 +213,6 @@ const handleZoom = (event: WheelEvent) => {
   if (rect) {
     const offsetX = event.clientX - rect.left - rect.width / 2 - state.translateX;
     const offsetY = event.clientY - rect.top - rect.height / 2 - state.translateY;
-
     // 根据新的缩放比例调整位移，保持缩放中心在鼠标位置
     state.translateX -= (offsetX / oldScale) * (state.scale - oldScale);
     state.translateY -= (offsetY / oldScale) * (state.scale - oldScale);
@@ -272,7 +261,6 @@ const onDragging = (event: MouseEvent) => {
     // 更新位移
     state.translateX = event.pageX - state.startX;
     state.translateY = event.pageY - state.startY;
-
     // 限制位移范围
     limitTranslation();
   }
@@ -287,7 +275,7 @@ const stopDragging = () => {
   document.removeEventListener("mouseup", stopDragging);
 };
 
-// `.resume-content` 容器样式
+// .resume-content 容器样式
 const contentStyle = computed(() => ({
   // 应用平移和缩放
   transform: `translate(-50%, -50%) translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`,

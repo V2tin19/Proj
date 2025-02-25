@@ -1,3 +1,44 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { message } from 'ant-design-vue';
+import { ShopOutlined, CheckCircleFilled } from '@ant-design/icons-vue';
+import { getTemplates } from "../../utils/getTemplates";
+import type { Template } from "../../types/template";
+import { useTemplateStore } from "../../store";
+
+// 模板列表
+const templates = ref<Template[]>([]);
+const templateStore = useTemplateStore();
+
+// 获取并初始化模板列表
+onMounted(async () => {
+  try {
+    templates.value = await getTemplates();
+  } catch (error) {
+    message.error('获取模板列表失败');
+    console.error('获取模板列表失败:', error);
+  }
+});
+
+// 处理模板切换
+const handleTemplateChange = (id: string | null) => {
+  if (!id) return;
+  const selectedTemplate = templates.value.find(t => t.id === id);
+  if (selectedTemplate) {
+    templateStore.currentTemplate = selectedTemplate;
+    message.success(`成功切换到模板: ${selectedTemplate.name}`); // 提示选择成功
+  }
+};
+
+// 计算模板图片 URL
+const getTemplateImage = (template: Template): string => {
+  if (!template.folderPath || !template.thumbnail) {
+    return ""; // 处理无图片情况
+  }
+  return new URL(`../../template/${template.folderPath}/${template.thumbnail}`, import.meta.url).href;
+};
+</script>
+
 <template>
   <div class="template-container">
     <!-- 页面标题 -->
@@ -27,6 +68,10 @@
             </div>
             <div class="template-info">
               <div class="template-title">{{ template.name }}</div>
+              <div class="template-author">
+                <!-- 链接 -->
+                作者：<a :href="String(template.link || '')" target="_blank">{{ template.author }}</a>
+              </div>
               <p class="template-description">{{ template.description }}</p>
               <a-button :type="templateStore.currentTemplate?.id === template.id ? 'text' : 'primary'"
                 :class="{ 'selected-button': templateStore.currentTemplate?.id === template.id }"
@@ -41,46 +86,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
-import { ShopOutlined, CheckCircleFilled } from '@ant-design/icons-vue';
-import { getTemplates } from "../../utils/getTemplates";
-import type { Template } from "../../types/template";
-import { useTemplateStore } from "../../store";
 
-// 模板列表
-const templates = ref<Template[]>([]);
-const templateStore = useTemplateStore();
-
-// 获取并初始化模板列表
-onMounted(async () => {
-  try {
-    templates.value = await getTemplates();
-  } catch (error) {
-    message.error('获取模板列表失败');
-    console.error('获取模板列表失败:', error);
-  }
-});
-
-// 处理模板切换
-const handleTemplateChange = (id: string | null) => {
-  if (!id) return;
-  const selectedTemplate = templates.value.find(t => t.id === id);
-  if (selectedTemplate) {
-    templateStore.setTemplate(selectedTemplate);
-    message.success(`成功切换到模板: ${selectedTemplate.name}`); // 提示选择成功
-  }
-};
-
-// 计算模板图片 URL
-const getTemplateImage = (template: Template): string => {
-  if (!template.folderPath || !template.thumbnail) {
-    return ""; // 处理无图片情况
-  }
-  return new URL(`../../template/${template.folderPath}/${template.thumbnail}`, import.meta.url).href;
-};
-</script>
 
 <style scoped>
 .template-container {

@@ -3,5 +3,7 @@
   "name": "简洁模板-双栏",
   "description": "AI构建的简洁双栏简历模板",
   "folderPath": "templateC",
-  "thumbnail": "preview.jpg"
+  "thumbnail": "preview.jpg",
+  "author": "AI",
+  "link": "https://github.com/weidong-repo"
 }
