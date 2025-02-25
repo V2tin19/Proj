@@ -34,7 +34,7 @@ const tourSteps: TourProps['steps'] = [
   {
     title: "选择方式",
     description: "第二步：选择“经历深挖”或“模拟面试”",
-    target: () => aiChatRef.value?.$el.querySelector("#ai-choose-content") ?? undefined,
+    target: () => aiChatRef.value?.$el.querySelector("#ai-choose-content") as HTMLElement,
     placement: "bottom",
     prevButtonProps: { children: () => "上一步" },
     nextButtonProps: { children: () => "下一步" },
@@ -42,7 +42,7 @@ const tourSteps: TourProps['steps'] = [
   {
     title: "开始对话",
     description: "第三步：开始和AI对话",
-    target: () => aiChatRef.value?.$el.querySelector("#ai-chat-content") ?? undefined,
+    target: () => aiChatRef.value?.$el.querySelector("#ai-chat-content") as HTMLElement,
     placement: "top",
     prevButtonProps: { children: () => "上一步" },
     nextButtonProps: { children: () => "下一步" },
@@ -50,7 +50,7 @@ const tourSteps: TourProps['steps'] = [
   {
     title: "经历修改",
     description: "最后：“经历深挖”模式下，AI会自动修改您的经历帮您优化！您只需要给建议即可",
-    target: () => inputRef.value?.$el.querySelector("#input-value") ?? undefined,
+    target: () => inputRef.value?.$el.querySelector("#input-value") as HTMLElement,
     placement: "left",
     prevButtonProps: { children: () => "上一步" },
     nextButtonProps: { children: () => "关闭" },
