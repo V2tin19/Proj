@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { defineProps, computed, ref } from "vue";
-import { sendToQwenAI } from "../../../api/qwenAPI";
+import { sendToQwenAIDialogue } from "../../../api/qwenAPI";
 import { useResumeStore } from '../../../store';
+import type { AIDialogue, DialogueHistory } from "../../../types/aiDialogue";
 import { defineEmits } from "vue";
 
 const resumeStore = useResumeStore();
@@ -35,12 +36,17 @@ const buildPrompt = (text: string) => {
 // 发送给 AI 处理
 const handleAiEnhance = async (Prompt: string, isExtend: boolean) => {
   if (!Prompt || Prompt.length < 5) return;
+  let message: AIDialogue = {
+    role: "user",
+    content: buildPrompt(Prompt)
+  }
+  let messages: DialogueHistory = [message]
   AIextent.value = isExtend;
   loading.value = true;
-  AIReply.value = ""; // 清空上一次的结果
+  AIReply.value = "";
   try {
-    await sendToQwenAI(
-      buildPrompt(Prompt),
+    await sendToQwenAIDialogue(
+      messages,
       (text, isComplete) => {
         AIReply.value = text;
         if (isComplete) {
@@ -54,7 +60,6 @@ const handleAiEnhance = async (Prompt: string, isExtend: boolean) => {
     loading.value = false;
   }
 };
-
 const handleApply = () => {
   if (AIReply.value) {
     emit('update', AIReply.value);
