@@ -1,5 +1,6 @@
 <template>
   <div class="resume-edit">
+    <a-alert message="现已经支持部分区域渲染markdown或HTML语法（如技能、项目等）" show-icon type="info" style="margin-bottom: 10px;" />
     <!-- 个人信息编辑组件 -->
     <personalInfo />
 

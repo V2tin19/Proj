@@ -44,7 +44,7 @@
     <section class="section" v-if="resume.honors.length">
       <h2 class="section-title">荣誉奖项</h2>
       <ul class="list">
-        <li v-for="honor in resume.honors" :key="honor.id">{{ honor.honorName }}</li>
+        <li v-for="honor in resume.honors" :key="honor.id" v-html="marked(honor.honorName)"></li>
       </ul>
     </section>
 
@@ -81,7 +81,7 @@
           </div>
           <p class="company">{{ work.company }}</p>
           <ul class="description-list">
-            <li v-for="(desc, index) in work.description.split('\n')" :key="index">{{ desc }}</li>
+            <li v-for="(desc, index) in work.description.split('\n')" :key="index" v-html="marked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -97,9 +97,9 @@
             <span class="duration">{{ project.startDate }} - {{ project.endDate }}</span>
           </div>
           <p class="role">角色：{{ project.role }}</p>
-          <p class="project-intro">{{ project.briefIntroduction }}</p>
+          <p class="project-intro" v-html="marked(project.briefIntroduction)"></p>
           <ul class="description-list">
-            <li v-for="(desc, index) in project.description.split('\n')" :key="index">{{ desc }}</li>
+            <li v-for="(desc, index) in project.description.split('\n')" :key="index" v-html="marked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -108,9 +108,7 @@
     <!-- 自我评价 -->
     <section class="section" v-if="resume.summary">
       <h2 class="section-title">自我评价</h2>
-      <p class="summary">
-        {{ resume.summary }}
-      </p>
+      <p class="summary" v-html="marked(resume.summary)"></p>
     </section>
   </div>
 </template>
@@ -118,6 +116,7 @@
 <script setup lang="ts">
 import { useResumeStore } from '../../store/useResumeStore';
 import { computed } from 'vue';
+import { marked } from 'marked';
 import type { ColorShades } from '../../types/color';
 
 // 接受父组件主题色
@@ -310,5 +309,9 @@ const resume = computed(() => resumeStore.$state);
   font-size: 14px;
   line-height: 1.6;
   text-align: justify;
+}
+
+:deep(strong) {
+  color: var(--primary-color) !important;
 }
 </style>

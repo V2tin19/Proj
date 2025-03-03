@@ -58,7 +58,7 @@
     <div class="section skills-section" v-if="resume.honors.length">
       <div class="section-title">荣誉奖项</div>
       <ul class="skills-list">
-        <li v-for="honor in resume.honors" :key="honor.id">{{ honor.honorName }}</li>
+        <li v-for="honor in resume.honors" :key="honor.id" v-html="marked(honor.honorName)"></li>
       </ul>
     </div>
 
@@ -70,7 +70,7 @@
           <p class="school">
             <span>{{ edu.school }}({{ edu.degree }})</span>
             <span>{{ edu.major }}</span>
-            <strong v-if="edu.startDate && edu.endDate">{{ edu.startDate }} 至 {{ edu.endDate }}</strong>
+            <b v-if="edu.startDate && edu.endDate">{{ edu.startDate }} 至 {{ edu.endDate }}</b>
             <!-- 空格 -->
           </p>
         </div>
@@ -82,7 +82,7 @@
     <div class="section skills-section" v-if="resume.skills.length">
       <div class="section-title">技能特长</div>
       <ul class="skills-list">
-        <li v-for="skill in resume.skills" :key="skill.id">{{ skill.skillName }}</li>
+        <li v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></li>
       </ul>
     </div>
     <!-- 工作/实习经历 -->
@@ -98,7 +98,7 @@
             </div>
           </div>
           <ul>
-            <li v-for="(desc, index) in work.description.split('\n')" :key="index">{{ desc }}</li>
+            <li v-for="(desc, index) in work.description.split('\n')" :key="index" v-html="marked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -119,10 +119,10 @@
                 project.endDate }}</span>
             </div>
             <hr>
-            <p class="project-introduction">{{ project.briefIntroduction }}</p>
+            <p class="project-introduction" v-html="marked(project.briefIntroduction)"></p>
           </div>
           <ul>
-            <li v-for="(desc, index) in project.description.split('\n')" :key="index">{{ desc }}</li>
+            <li v-for="(desc, index) in project.description.split('\n')" :key="index" v-html="marked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -131,9 +131,7 @@
     <!-- 自我评价 -->
     <div class="section self-evaluation-section" v-if="resume.summary">
       <div class="section-title">自我评价</div>
-      <p class="self-evaluation">
-        {{ resume.summary }}
-      </p>
+      <p class="self-evaluation" v-html="marked(resume.summary)"></p>
     </div>
   </div>
 </template>
@@ -141,6 +139,7 @@
 <script setup lang="ts">
 import { useResumeStore } from '../../store/useResumeStore';
 import { computed } from 'vue';
+import { marked } from 'marked';
 import type { ColorShades } from '../../types/color';
 // 接受父组件主题色
 const props = defineProps<{
@@ -180,5 +179,9 @@ const resume = computed(() => resumeStore.$state);
   border-left: 5px solid var(--color-base);
   margin-bottom: 10px;
   box-sizing: border-box;
+}
+
+:deep(strong) {
+  color: var(--color-base) !important;
 }
 </style>

@@ -35,7 +35,7 @@
       <!-- 个人总结 -->
       <section class="section" v-if="resume.summary">
         <h2 class="section-title">个人简介</h2>
-        <div class="section-content summary">{{ resume.summary }}</div>
+        <div class="section-content summary" v-html="marked(resume.summary)"></div>
       </section>
 
       <!-- 教育经历 -->
@@ -62,7 +62,7 @@
               <div class="time">{{ work.startDate }} - {{ work.endDate }}</div>
             </div>
             <div class="position">{{ work.position }}</div>
-            <div class="description">{{ work.description }}</div>
+            <div class="description" v-html="marked(work.description)"></div>
           </div>
         </div>
       </section>
@@ -77,11 +77,10 @@
               <div class="time">{{ project.startDate }} - {{ project.endDate }}</div>
             </div>
             <div class="role">{{ project.role }}</div>
-            <div class="brief">{{ project.briefIntroduction }}</div>
+            <div class="brief" v-html="marked(project.briefIntroduction)"></div>
             <ul class="details">
-              <li v-for="(desc, index) in String(project.description || '').split('\n')" :key="index">
-                {{ desc }}
-              </li>
+              <li v-for="(desc, index) in String(project.description || '').split('\n')" :key="index"
+                v-html="marked(desc)"></li>
             </ul>
           </div>
         </div>
@@ -91,9 +90,8 @@
       <section class="section" v-if="resume.skills.length">
         <h2 class="section-title">技能特长</h2>
         <div class="section-content skills">
-          <span class="skill-tag" v-for="skill in resume.skills" :key="skill.id">
-            {{ skill.skillName }}
-          </span>
+          <span class="skill-tag" v-for="skill in resume.skills" :key="skill.id"
+            v-html="marked(skill.skillName)"></span>
         </div>
       </section>
 
@@ -102,7 +100,7 @@
         <h2 class="section-title">荣誉奖项</h2>
         <div class="section-content">
           <div class="honor-item" v-for="honor in resume.honors" :key="honor.id">
-            <span class="honor-name">{{ honor.honorName }}</span>
+            <span class="honor-name" v-html="marked(honor.honorName)"></span>
             <span class="honor-date">{{ honor.date }}</span>
           </div>
         </div>
@@ -115,6 +113,7 @@
 import { useResumeStore } from '../../store/useResumeStore';
 import { computed } from 'vue';
 import type { ColorShades } from '../../types/color';
+import { marked } from 'marked';
 
 // 接受父组件的主题色
 const props = defineProps<{
@@ -358,5 +357,9 @@ const resume = computed(() => resumeStore.$state);
   .contact-info {
     grid-template-columns: 1fr;
   }
+}
+
+:deep(strong) {
+  color: var(--color-base) !important;
 }
 </style>

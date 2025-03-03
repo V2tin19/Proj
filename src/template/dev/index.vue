@@ -62,7 +62,7 @@
       <div class="section-content">
         <div class="item" v-for="work in resume.workExperience" :key="work.id">
           <span>{{ work.company }} - {{ work.position }} ({{ work.startDate }} 至 {{ work.endDate }})</span>
-          <p>{{ work.description }}</p>
+          <p v-html="marked(work.description)"></p>
         </div>
       </div>
     </div>
@@ -71,7 +71,7 @@
     <div class="section skills-section" v-if="resume.skills.length">
       <div class="section-title">技能特长</div>
       <ul class="skills-list">
-        <li v-for="skill in resume.skills" :key="skill.id">{{ skill.skillName }}</li>
+        <li v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></li>
       </ul>
     </div>
 
@@ -81,9 +81,9 @@
       <div class="section-content">
         <div class="item" v-for="project in resume.projects" :key="project.id">
           <span>{{ project.projectName }} - {{ project.role }} ({{ project.startDate }} 至 {{ project.endDate }})</span>
-          <p>{{ project.briefIntroduction }}</p>
+          <p v-html="marked(project.briefIntroduction)"></p>
           <ul>
-            <li v-for="(desc, index) in project.description.split('\n')" :key="index">{{ desc }}</li>
+            <li v-for="(desc, index) in project.description.split('\n')" :key="index" v-html="marked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -95,7 +95,7 @@
       <div class="section-content">
         <div class="item" v-for="honor in resume.honors" :key="honor.id">
           <span>{{ honor.honorName }} ({{ honor.date }})</span>
-          <p>{{ honor.description }}</p>
+          <p v-html="marked(honor.description)"></p>
         </div>
       </div>
     </div>
@@ -103,7 +103,7 @@
     <!-- 自我评价 -->
     <div class="section self-evaluation-section" v-if="resume.summary">
       <div class="section-title">自我评价</div>
-      <p class="self-evaluation">{{ resume.summary }}</p>
+      <p class="self-evaluation" v-html="marked(resume.summary)"></p>
     </div>
   </div>
 </template>
@@ -112,7 +112,7 @@
 import { useResumeStore } from '../../store/useResumeStore';
 import { computed } from 'vue';
 import type { ColorShades } from '../../types/color';
-
+import { marked } from 'marked';
 // 接受父组件的主题色
 const props = defineProps<{
   colorShades: ColorShades;
@@ -204,5 +204,9 @@ body {
 .self-evaluation {
   font-style: italic;
   margin-top: 10px;
+}
+
+:deep(strong) {
+  color: var(--color-base) !important;
 }
 </style>
