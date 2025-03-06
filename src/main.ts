@@ -10,7 +10,7 @@ import './assets/styles/theme.css';
 import './assets/styles/dark.css';
 // 持久化pinia
 import piniaPersist from 'pinia-plugin-persistedstate'
-
+import lazyLoad from './directives/lazyLoad';
 // import { ConfigProvider } from 'ant-design-vue';
 // svg插件配置代码
 // import 'virtual:svg-icons-register'
@@ -22,6 +22,6 @@ pinia.use(piniaPersist) // 启用持久化功能
 const app = createApp(App);
 app.use(router);
 app.use(pinia);
-
+app.directive('lazy', lazyLoad);
 app.use(Antd);
 app.mount('#app');

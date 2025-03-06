@@ -64,7 +64,7 @@ const getTemplateImage = (template: Template): string => {
           <!-- 模板内容 -->
           <div class="template-content">
             <div class="template-image-wrapper">
-              <img :src="getTemplateImage(template)" :alt="template.name" class="template-image" />
+              <img v-lazy="getTemplateImage(template)" :alt="template.name" class="template-image" />
             </div>
             <div class="template-info">
               <div class="template-title">{{ template.name }}</div>
