@@ -154,7 +154,7 @@ const updateFontSize = () => {
 // 监听字体大小变化
 watch(
   () => resume.value.resumeSetting.fontSize,
-  (newSize) => {
+  () => {
     updateFontSize();
   },
   { immediate: true }
