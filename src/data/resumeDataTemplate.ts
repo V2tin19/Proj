@@ -68,5 +68,14 @@ export const resumeTemplate = {
     }
   ],
   // 自我评价
-  summary: ''
+  summary: '',
+  // 简历设置
+  resumeSetting: {
+    themeColor1: '#203CCB',  // 主题颜色1（深色）
+    themeColor2: '#203CCB',  // 主题颜色2（浅色）
+    fontSize: 16,         // 字体大小
+    sectionSpacing: 20,   // 板块之间的间距
+    paragraphSpacing: 10,  // 段落之间的间距
+    currentTemplate: 202501  // 默认简历模板id
+  }
 } as const;

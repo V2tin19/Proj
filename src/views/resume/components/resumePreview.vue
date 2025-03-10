@@ -1,15 +1,52 @@
 <template>
 
   <div class="setting">
-    <!-- 选择模板 -->
-    <a-select v-model:value="selectedTemplateId" @change="handleTemplateChange" style="width: 150px;">
-      <a-select-option v-for="item in templates" :key="item.id" :value="item.id">
-        {{ item.name }}
-      </a-select-option>
-    </a-select>
-    <!-- 切换主题色 -->
-    <input class="changeColor" type="color" v-model="themeColor"
-      @change="(e) => handleThemeChange((e.target as HTMLInputElement).value)" />
+    <!-- 弹框模板设置 -->
+    <a-button type="primary" @click="resumeSettingClick" style="margin-right: 10px;">简历设置</a-button>
+    <a-modal v-model:open="open" title="简历基本设置">
+      <template #footer>
+        <a-button key="submit" type="primary" @click="resumeSettingClickOK">确定</a-button>
+      </template>
+      <!-- 选择模板 -->
+      <a-form-item label="简历模板选择" name="简历模板选择">
+        <a-select v-model:value="currentTemplate" @change="handleTemplateChange" style="width: 150px;">
+          <a-select-option v-for="item in templates" :key="item.id" :value="item.id">
+            {{ item.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <!-- 设置简历主色调-->
+      <a-form-item label="简历主色调" name="简历主色调">
+        <input id="themeColor1" class="changeColor" type="color" v-model="resumeSetting.themeColor1"
+          @change="(e) => themeColor1 = ((e.target as HTMLInputElement).value)" />
+      </a-form-item>
+      <!-- 设置简历副色调 -->
+      <a-form-item label="简历副色调" name="简历副色调">
+        <input id="themeColor2" class="changeColor" type="color" v-model="resumeSetting.themeColor2"
+          @change="(e) => themeColor2 = (e.target as HTMLInputElement).value" />
+      </a-form-item>
+      <!-- 设置字体大小 -->
+      <a-form-item label="字体大小" name="字体大小">
+        <a-slider v-model:value="fontSize" :min="12" :max="24" />
+      </a-form-item>
+      <!-- 设置段落间距 -->
+      <a-form-item label="段落间距" name="段落间距">
+        <a-slider v-model:value="paragraphSpacing" :min="0" :max="30" />
+      </a-form-item>
+      <!-- 设置区块间距 -->
+      <a-form-item label="区块间距" name="区块间距">
+        <a-slider v-model:value="sectionSpacing" :min="0" :max="30" />
+      </a-form-item>
+      <!-- 设置左右页边距 -->
+      <a-form-item label="左右页边距" name="左右页边距">
+        <a-slider v-model:value="padding_left_right" :min="0" :max="65" />
+      </a-form-item>
+      <!-- 设置上下页边距 -->
+      <a-form-item label="上下页边距" name="上下页边距">
+        <a-slider v-model:value="padding_top_bottom" :min="0" :max="35" />
+      </a-form-item>
+    </a-modal>
+
     <a-button type="primary" @click="exportToPDF" id="export-button">导出PDF</a-button>
   </div>
   <div class="preview" ref="resumePreview" @mousedown="startDragging" @wheel.prevent="handleZoom">
@@ -24,78 +61,103 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick, watch, defineAsyncComponent, type ComponentOptions } from "vue";
 import { getTemplates } from "../../../utils/getTemplates";
 import type { Template } from "../../../types/template";
-// 引入模板存储中的数据和方法
-import { useTemplateStore } from "../../../store";
+import { useResumeStore } from "../../../store";
 import { generateColorShades } from "../../../utils/colorUtils";
 import html2pdf from "html2pdf.js";
 import { createApp } from 'vue';
-
+import { storeToRefs } from 'pinia'
+import { message } from "ant-design-vue";
 // 主题色部分功能
-const templateStore = useTemplateStore();
-const themeColor = computed({
-  get: () => templateStore.themeColor,
-  set: (value) => templateStore.themeColor = value,
+const resumeStore = useResumeStore();
+const { resumeSetting } = storeToRefs(resumeStore);
+const themeColor1 = computed({
+  get: () => resumeSetting.value.themeColor1,
+  set: (val) => resumeStore.updateResumeSetting({ themeColor1: val })
+})
+const themeColor2 = computed({
+  get: () => resumeSetting.value.themeColor2,
+  set: (val) => resumeStore.updateResumeSetting({ themeColor2: val })
 });
+const fontSize = computed({
+  get: () => resumeSetting.value.fontSize,
+  set: (val) => resumeStore.updateResumeSetting({ fontSize: val })
+})
+
+const sectionSpacing = computed({
+  get: () => resumeSetting.value.sectionSpacing,
+  set: (val) => resumeStore.updateResumeSetting({ sectionSpacing: val })
+})
+
+const paragraphSpacing = computed({
+  get: () => resumeSetting.value.paragraphSpacing,
+  set: (val) => resumeStore.updateResumeSetting({ paragraphSpacing: val })
+})
+// 当前选中的模板ID
+const currentTemplate = computed({
+  get: () => resumeSetting.value.currentTemplate,
+  set: (val) => resumeStore.updateResumeSetting({ currentTemplate: val })
+})
+// 左右页边距
+const padding_left_right = computed({
+  get: () => resumeSetting.value.padding_left_right,
+  set: (val) => resumeStore.updateResumeSetting({ padding_left_right: val })
+})
+//  上下页边距
+const padding_top_bottom = computed({
+  get: () => resumeSetting.value.padding_top_bottom,
+  set: (val) => resumeStore.updateResumeSetting({ padding_top_bottom: val })
+})
 // 生成的色阶对象
-const colorShades = ref(generateColorShades(themeColor.value));
-// 监听 themeColor 变化，自动更新色阶
-watch(themeColor, (newColor) => {
-  colorShades.value = generateColorShades(newColor);
-}, { immediate: true });
-// 处理主题色变化
-const handleThemeChange = (color: string) => {
-  templateStore.themeColor = color;
-};
+const colorShades = ref(generateColorShades(resumeSetting.value.themeColor1));
+
 // 多模板切换部分功能
 // 动态导入所有模板组件
 const templateModules = import.meta.glob('../../../template/**/index.vue');
 // 模板列表
 const templates = ref<Template[]>([]);
-// 当前选中的模板 ID
-const selectedTemplateId = ref<string | null>(null);
 // 当前渲染的组件
 const currentComponent = ref();
 
-// 获取并初始化模板列表
 onMounted(async () => {
   try {
     templates.value = await getTemplates();
-    // 如果 Pinia 中有已选中的模板，则恢复
-    if (templateStore.currentTemplate) {
-      selectedTemplateId.value = templateStore.currentTemplate.id;
-    } else if (templates.value.length > 0) {
-      // 否则默认选中第一个模板
-      selectedTemplateId.value = templates.value[0].id;
-      templateStore.currentTemplate = templates.value[0];
+    // 如果有已选中的模板，则恢复
+    if (currentTemplate.value) {
+      loadCurrentTemplate();
+    } else {
+      // 如果没有已选中的模板，则默认选中第一个
+      currentTemplate.value = templates.value[0].id;
+      loadCurrentTemplate();
     }
-    loadCurrentTemplate();
   } catch (error) {
     console.error('获取模板列表失败:', error);
   }
 });
 
-// 监听 selectedTemplateId 的变化，以加载对应的组件
-watch(selectedTemplateId, (newId) => {
+// 监听当前简历模板的变化，以加载对应的组件
+watch(currentTemplate, (newId) => {
   handleTemplateChange(newId);
 });
 
 // 处理模板切换
-const handleTemplateChange = (id: string | null) => {
+const handleTemplateChange = (id: String | null) => {
   if (!id) return;
   const selectedTemplate = templates.value.find(t => t.id === id);
   if (selectedTemplate) {
-    templateStore.currentTemplate = selectedTemplate;
+    currentTemplate.value = selectedTemplate.id;
     loadCurrentTemplate();
   }
 };
 
 // 加载当前选中的模板组件
 const loadCurrentTemplate = () => {
-  const selectedTemplate = templateStore.currentTemplate;
+  const selectedTemplate = templates.value.find(t => t.id === currentTemplate.value);
   if (selectedTemplate?.folderPath) {
     const folderName = selectedTemplate.folderPath;
     if (!folderName) {
       console.error('模板路径错误:', selectedTemplate.folderPath);
+      currentTemplate.value = templates.value[0].id;
+      loadCurrentTemplate();
       return;
     }
     const importPath = `../../../template/${folderName}/index.vue`;
@@ -103,11 +165,23 @@ const loadCurrentTemplate = () => {
     if (importFunc) {
       currentComponent.value = defineAsyncComponent(() => importFunc() as Promise<typeof import('*.vue')['default']>);
     } else {
+      currentTemplate.value = templates.value[0].id;
+      loadCurrentTemplate();
       console.error(`未找到路径为 ${importPath} 的组件`);
     }
   }
 };
 
+// 弹框
+let open = ref(false);
+const resumeSettingClick = () => {
+  open.value = true;
+}
+
+const resumeSettingClickOK = () => {
+  open.value = false;
+  message.success('设置成功');
+}
 
 // 导出简历为 PDF
 const exportToPDF = async () => {
@@ -122,7 +196,7 @@ const exportToPDF = async () => {
   content.classList.add("resume-content");
 
   // 渲染当前模板的内容
-  const selectedTemplate = templateStore.currentTemplate;
+  const selectedTemplate = templates.value.find(t => t.id === currentTemplate.value);
   if (selectedTemplate?.folderPath) {
     const importPath = `../../../template/${selectedTemplate.folderPath}/index.vue`;
     const importFunc = templateModules[importPath];

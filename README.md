@@ -23,9 +23,17 @@
 
 ![image-20250222224844722](https://img.fish9.cn/blog-img/2023/image-20250222224844722.png)
 
+AI模拟拷打：
+
+![img](https://img.fish9.cn/blog-img/2023/image-20250226124049111.png)
+
 AI润色
 
 ![image-20250222224945177](https://img.fish9.cn/blog-img/2023/image-20250222224945177.png)
+
+简历高度自定义配置”
+
+![image-20250310231433143](https://img.fish9.cn/blog-img/2023/image-20250310231433143.png)
 
 ## 🚀 快速开始
 
@@ -55,6 +63,8 @@ npm run dev
 1. 复制一份`/template/dev`目录，然后按照里面的数据挂载到前端即可。
 2. 然后完善您模板目录下的`config.json`和`preview.jpg`（注意，config.json中的id务必是唯一值）
 3. 最后，请在`/public/templates.json`文件中加上您开发的模板信息（直接复制`config.json`的即可！）
+
+
 
 ## 🌍 使用 Cloudflare Worker 进行 API 反向代理
 
@@ -86,22 +96,18 @@ https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 主要功能：
 
 - ✅ 简历编辑，数据前端持久化
-
 - ✅ 简历导出为 PDF
-
 - ✅ 简历多模板，支持热插拔切换
-
 - ✅ 多套简历模板，支持前端开发者共创
-
 - ✅ 简历撰写的时候，AI可以进行润色
-
 - ✅ AI简历深挖 利用ai 基于单个项目或者经历的长对话对简历进行深度优化
-
 - ✅ AI模拟面试 针对单一项目或者经历对用户进行面试拷打
 
 细节功能：
 
 - ✅ 模板主题色切换
+
+- ✅ 简历高度自定义，如段落间距、区块间距、字体大小、页边距等
 
 - ✅ 网站整体明/暗色切换
 

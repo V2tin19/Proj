@@ -1,45 +1,65 @@
 <template>
-  <div class="resume-container" :style="colorShadesStyle">
+  <div class="resume-container" :style="resumeStyle">
     <!-- 左侧边栏 -->
     <aside class="sidebar">
       <div class="profile-section">
         <div class="avatar-wrapper" v-if="resume.personalInfo.avatar">
           <img :src="resume.personalInfo.avatar" alt="头像" class="avatar">
         </div>
-        <h1 class="name">{{ resume.personalInfo.name }}</h1>
-        <p class="title">{{ resume.personalInfo.applicationPosition }}</p>
+        <h1 class="name" v-if="resume.personalInfo.name">{{ resume.personalInfo.name }}</h1>
+        <p class="title" v-if="resume.personalInfo.applicationPosition">{{ resume.personalInfo.applicationPosition }}
+        </p>
       </div>
 
-      <div class="contact-section">
+      <div class="contact-section" v-if="hasContactInfo">
+        <div class="contact-item" v-if="resume.personalInfo.gender">
+          <i class="fas fa-user"></i>
+          <span>性别：{{ resume.personalInfo.gender }}</span>
+        </div>
+        <div class="contact-item" v-if="resume.personalInfo.age">
+          <i class="fas fa-birthday-cake"></i>
+          <span>年龄：{{ resume.personalInfo.age }}岁</span>
+        </div>
+        <div class="contact-item" v-if="resume.personalInfo.politicalStatus">
+          <i class="fas fa-flag"></i>
+          <span>政治面貌：{{ resume.personalInfo.politicalStatus }}</span>
+        </div>
         <div class="contact-item" v-if="resume.personalInfo.phone">
           <i class="fas fa-phone"></i>
-          <span>{{ resume.personalInfo.phone }}</span>
+          <span>电话：{{ resume.personalInfo.phone }}</span>
         </div>
         <div class="contact-item" v-if="resume.personalInfo.email">
           <i class="fas fa-envelope"></i>
-          <span>{{ resume.personalInfo.email }}</span>
+          <span>邮箱：{{ resume.personalInfo.email }}</span>
+        </div>
+        <div class="contact-item" v-if="resume.personalInfo.university">
+          <i class="fas fa-university"></i>
+          <span>学校：{{ resume.personalInfo.university }}</span>
+        </div>
+        <div class="contact-item" v-if="resume.personalInfo.major">
+          <i class="fas fa-graduation-cap"></i>
+          <span>专业：{{ resume.personalInfo.major }}</span>
         </div>
         <div class="contact-item" v-if="resume.personalInfo.website">
           <i class="fas fa-globe"></i>
-          <a :href="resume.personalInfo.website" target="_blank">个人网站</a>
+          <span>网站：<a :href="resume.personalInfo.website" target="_blank">{{ resume.personalInfo.website }}</a></span>
         </div>
       </div>
 
-      <div class="side-section">
+      <div class="side-section" v-if="resume.education.length">
         <h2 class="side-title">教育背景</h2>
         <div class="education-item" v-for="edu in resume.education" :key="edu.id">
           <h3>{{ edu.school }}</h3>
           <p class="edu-major">{{ edu.major }}</p>
           <p class="edu-degree">{{ edu.degree }}</p>
-          <p class="edu-time">{{ edu.startDate }} - {{ edu.endDate }}</p>
+          <p class="edu-time">{{ edu.startDate }} - {{ formatEndDate(edu.endDate) }}</p>
         </div>
       </div>
 
-      <div class="side-section">
+      <div class="side-section" v-if="resume.skills.length">
         <h2 class="side-title">技能特长</h2>
         <div class="skills-wrapper">
-          <span class="skill-tag" v-for="skill in resume.skills" :key="skill.id"
-            v-html="marked(skill.skillName)"></span>
+          <p class="skill-tag" v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></p>
         </div>
       </div>
     </aside>
@@ -56,10 +76,11 @@
         <div class="experience-item" v-for="work in resume.workExperience" :key="work.id">
           <div class="exp-header">
             <h3>{{ work.company }}</h3>
-            <span class="exp-date">{{ work.startDate }} - {{ work.endDate }}</span>
+            <div class="exp-role">{{ work.position }}</div>
+            <span class="exp-date">{{ work.startDate }} - {{ formatEndDate(work.endDate) }}</span>
           </div>
-          <div class="exp-role">{{ work.position }}</div>
-          <p class="exp-desc" v-html="marked(work.description)"></p>
+
+          <div class="exp-desc" v-html="marked(work.description)"></div>
         </div>
       </section>
 
@@ -68,25 +89,21 @@
         <div class="project-item" v-for="project in resume.projects" :key="project.id">
           <div class="proj-header">
             <h3>{{ project.projectName }}</h3>
-            <span class="proj-date">{{ project.startDate }} - {{ project.endDate }}</span>
+            <div class="proj-role">{{ project.role }}</div>
+            <span class="proj-date">{{ project.startDate }} - {{ formatEndDate(project.endDate) }}</span>
           </div>
-          <div class="proj-role">{{ project.role }}</div>
-          <p class="proj-brief" v-html="marked(project.briefIntroduction)"></p>
-          <ul class="proj-details">
-            <li v-for="(desc, index) in String(project.description || '').split('\n')" :key="index"
-              v-html="marked(desc)"></li>
-          </ul>
+
+          <div class="proj-brief" v-html="marked(project.briefIntroduction)"></div>
+          <div class="proj-details" v-html="marked(project.description)"></div>
         </div>
       </section>
 
       <section class="content-section" v-if="resume.honors.length">
         <h2 class="section-title">荣誉奖项</h2>
-        <div class="honors-list">
-          <div class="honor-item" v-for="honor in resume.honors" :key="honor.id">
-            <span class="honor-name" v-html="marked(honor.honorName)"></span>
-            <span class="honor-date">{{ honor.date }}</span>
-          </div>
-        </div>
+        <p v-for="honor in resume.honors" :key="honor.id" class="honor-item">
+          <span v-html="marked(honor.honorName)"></span>
+          <span class="honor-date" v-if="honor.date">{{ honor.date }}</span>
+        </p>
       </section>
     </main>
   </div>
@@ -94,62 +111,92 @@
 
 <script setup lang="ts">
 import { useResumeStore } from '../../store/useResumeStore';
-import { computed } from 'vue';
-import type { ColorShades } from '../../types/color';
+import { computed, watch, onMounted } from 'vue';
 import { marked } from 'marked';
 
-// 接受父组件的主题色
-const props = defineProps<{
-  colorShades: ColorShades;
-}>();
-
-// 动态生成 CSS 变量的样式
-const colorShadesStyle = computed(() => ({
-  '--color-lighter': props.colorShades.lighter,
-  '--color-light': props.colorShades.light,
-  '--color-base': props.colorShades.base,
-  '--color-dark': props.colorShades.dark,
-  '--color-darker': props.colorShades.darker,
-}));
-
-// 引入引用的store
+// 引用的store
 const resumeStore = useResumeStore();
-
-// 使用计算属性来获取store中的数据
 const resume = computed(() => resumeStore.$state);
+
+// 处理结束日期的显示
+const formatEndDate = (endDate: string | null) => {
+  if (!endDate) return '';
+  const today = new Date();
+  const end = new Date(endDate);
+  return end > today ? '至今' : endDate;
+};
+
+// 判断是否有联系方式信息
+const hasContactInfo = computed(() => {
+  const { phone, email, website, gender, age, politicalStatus, university, major } = resume.value.personalInfo;
+  return phone || email || website || gender || age || politicalStatus || university || major;
+});
+
+// 合并所有样式到一个计算属性
+const resumeStyle = computed(() => {
+  return {
+    '--paragraph-spacing': `${resume.value.resumeSetting.paragraphSpacing}px`,
+    '--section-spacing': `${resume.value.resumeSetting.sectionSpacing}px`,
+    '--padding-left-right': `${resume.value.resumeSetting.padding_left_right}px`,
+    '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
+    '--themeColor1': resume.value.resumeSetting.themeColor1,
+    '--themeColor2': resume.value.resumeSetting.themeColor2
+  };
+});
+
+// 组件挂载时设置字体大小
+onMounted(() => {
+  document.documentElement.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
+});
+
+// 监听字体大小变化
+watch(
+  () => resume.value.resumeSetting.fontSize,
+  (newSize) => {
+    document.documentElement.style.fontSize = `${newSize}px`;
+  }
+);
 </script>
 
 <style scoped>
 .resume-container {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  min-height: 297mm;
-  width: 210mm;
+  grid-template-columns: 280px 1fr;
   margin: 0 auto;
   background: white;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.05);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;
+  line-height: 1.5;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 1122px;
 }
 
 /* 侧边栏样式 */
 .sidebar {
-  background: var(--color-darker);
+  background: var(--themeColor1);
   color: white;
-  padding: 40px 30px;
+  padding: calc(var(--padding-top-bottom) * 0.8) calc(var(--padding-left-right) * 0.8);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
 }
 
 .profile-section {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: calc(var(--section-spacing) * 0.5);
+  padding-bottom: calc(var(--section-spacing) * 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .avatar-wrapper {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 20px;
+  width: 90px;
+  height: 90px;
+  margin: 0 auto calc(var(--paragraph-spacing) * 0.6);
   border-radius: 50%;
   overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--themeColor2);
 }
 
 .avatar {
@@ -159,212 +206,247 @@ const resume = computed(() => resumeStore.$state);
 }
 
 .name {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
-  margin: 0 0 8px;
+  margin: calc(var(--paragraph-spacing) * 0.6) 0;
   color: white;
 }
 
 .title {
-  font-size: 16px;
-  color: var(--color-lighter);
+  font-size: 14px;
+  color: var(--themeColor2);
   margin: 0;
 }
 
 .contact-section {
-  margin-bottom: 30px;
+  margin-bottom: calc(var(--section-spacing) * 0.5);
 }
 
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  color: var(--color-lighter);
+  gap: 6px;
+  margin-bottom: calc(var(--paragraph-spacing) * 0.6);
+  color: white;
+  font-size: 12px;
 }
 
 .contact-item i {
-  width: 16px;
-  color: var(--color-light);
+  width: 14px;
+  color: var(--themeColor2);
 }
 
 .contact-item a {
-  color: var(--color-lighter);
+  color: var(--themeColor2);
   text-decoration: none;
+  word-break: break-all;
 }
 
 .side-section {
-  margin-bottom: 30px;
+  margin-bottom: calc(var(--section-spacing) * 0.5);
 }
 
 .side-title {
-  font-size: 18px;
+  font-size: 15px;
   color: white;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--color-light);
+  margin-bottom: calc(var(--paragraph-spacing) * 0.6);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--themeColor2);
+  font-weight: 600;
 }
 
 .education-item {
-  margin-bottom: 20px;
+  margin-bottom: calc(var(--section-spacing) * 0.5);
+  padding: calc(var(--paragraph-spacing) * 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 .education-item h3 {
-  font-size: 16px;
-  margin: 0 0 5px;
+  font-size: 13px;
+  margin: 0 0 4px;
   color: white;
+  font-weight: 600;
 }
 
 .edu-major,
-.edu-degree {
-  color: var(--color-lighter);
-  margin: 3px 0;
-  font-size: 14px;
+.edu-degree,
+.edu-time {
+  margin: calc(var(--paragraph-spacing) * 0.4) 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
 }
 
 .edu-time {
-  font-size: 12px;
-  color: var(--color-light);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .skills-wrapper {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
 }
 
 .skill-tag {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 12px;
-  color: var(--color-lighter);
+  color: white;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  margin-right: 12px;
+}
+
+
+
+.skill-tag:last-child::after {
+  display: none;
 }
 
 /* 主要内容区域样式 */
 .main-content {
-  padding: 40px;
+  padding: calc(var(--padding-top-bottom) * 0.8) calc(var(--padding-left-right) * 0.8);
   background: white;
+  box-sizing: border-box;
 }
 
 .content-section {
-  margin-bottom: 35px;
+  margin-bottom: calc(var(--section-spacing) * 0.8);
 }
 
 .section-title {
-  font-size: 20px;
-  color: var(--color-darker);
-  margin-bottom: 20px;
-  position: relative;
-  padding-bottom: 8px;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 30px;
-  height: 3px;
-  background: var(--color-base);
-}
-
-.summary {
-  line-height: 1.6;
-  color: #444;
+  font-size: 1.3rem;
+  color: var(--themeColor1);
+  margin-bottom: var(--section-spacing);
+  border-bottom: 2px solid var(--themeColor1);
 }
 
 .experience-item,
 .project-item {
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: calc(var(--section-spacing) * 0.8);
+  padding: calc(var(--section-spacing) * 0.6);
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 4px;
 }
 
 .exp-header,
 .proj-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
+  align-items: center;
+  margin-bottom: var(--paragraph-spacing);
 }
 
 .exp-header h3,
 .proj-header h3 {
-  font-size: 18px;
-  color: var(--color-darker);
+  font-size: 1rem;
+  color: var(--themeColor1);
   margin: 0;
+  font-weight: 600;
 }
 
 .exp-date,
 .proj-date {
-  font-size: 14px;
+  font-size: 1.15rem;
   color: #666;
 }
 
 .exp-role,
 .proj-role {
-  color: var(--color-base);
-  font-size: 15px;
-  margin-bottom: 8px;
+  color: var(--themeColor1);
+  font-size: 1rem;
+  margin-bottom: var(--paragraph-spacing);
 }
 
 .exp-desc,
+.proj-details {
+  color: #444;
+  line-height: 1.6;
+  margin: var(--paragraph-spacing) 0;
+}
+
 .proj-brief {
   color: #444;
   line-height: 1.6;
-  font-size: 14px;
-}
-
-.proj-details {
-  list-style: none;
-  padding-left: 0;
-  margin: 10px 0 0;
-}
-
-.proj-details li {
-  position: relative;
-  padding-left: 15px;
-  margin-bottom: 5px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #444;
-}
-
-.proj-details li::before {
-  content: '•';
-  position: absolute;
-  left: 0;
-  color: var(--color-base);
-}
-
-.honors-list {
-  display: grid;
-  gap: 12px;
+  margin: var(--paragraph-spacing) 0;
+  padding: var(--paragraph-spacing);
+  background: #f8f8f8;
+  border-radius: 4px;
 }
 
 .honor-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
-
-.honor-name {
-  color: #444;
-  font-weight: 500;
+  margin: 0;
+  padding: calc(var(--paragraph-spacing) * 0.5) 0;
+  color: var(--themeColor1);
 }
 
 .honor-date {
   color: #666;
-  font-size: 14px;
+  margin-left: 1em;
+  min-width: 75px;
 }
 
+:deep(p) {
+  margin: calc(var(--paragraph-spacing) / 2) 0 !important;
+  line-height: 1.6;
+}
+
+:deep(strong) {
+  color: var(--themeColor1) !important;
+  font-weight: 600;
+}
+
+/* 确保所有元素都使用border-box */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* 调整内容区域的边距和间距 */
+.content-section {
+  margin-bottom: calc(var(--section-spacing) * 0.8);
+}
+
+.experience-item,
+.project-item {
+  margin-bottom: calc(var(--section-spacing) * 0.8);
+  padding: calc(var(--section-spacing) * 0.6);
+}
+
+/* 调整侧边栏内容的间距 */
+.profile-section {
+  margin-bottom: calc(var(--section-spacing) * 0.5);
+  padding-bottom: calc(var(--section-spacing) * 0.5);
+}
+
+.contact-section {
+  margin-bottom: calc(var(--section-spacing) * 0.5);
+}
+
+.side-section {
+  margin-bottom: calc(var(--section-spacing) * 0.5);
+}
+
+.education-item {
+  margin-bottom: calc(var(--section-spacing) * 0.5);
+  padding: calc(var(--paragraph-spacing) * 0.5);
+}
+
+/* 打印样式优化 */
 @media print {
   .resume-container {
+    margin: 0;
+    padding: 0;
+
     box-shadow: none;
+    overflow: hidden;
+  }
+
+  .sidebar,
+  .main-content {
+    overflow: hidden;
   }
 }
 
@@ -373,17 +455,5 @@ const resume = computed(() => resumeStore.$state);
     grid-template-columns: 1fr;
     width: 100%;
   }
-
-  .sidebar {
-    padding: 20px;
-  }
-
-  .main-content {
-    padding: 20px;
-  }
-}
-
-:deep(strong) {
-  color: var(--color-base) !important;
 }
 </style>

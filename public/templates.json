@@ -36,24 +36,6 @@
     "link": "https://github.com/weidong-repo"
   },
   {
-    "id": "202505",
-    "name": "简洁模板-单栏",
-    "description": "AI构建的简洁单栏简历模板",
-    "folderPath": "templateE",
-    "thumbnail": "preview.jpg",
-    "author": "AI",
-    "link": "https://github.com/weidong-repo"
-  },
-  {
-    "id": "202506",
-    "name": "单栏模板优化",
-    "description": "优化了各项列表的格式表现, 压缩个人信息的占比",
-    "folderPath": "templateF",
-    "thumbnail": "preview.jpg",
-    "author": "Junjun Chen",
-    "link": "https://github.com/your294"
-  },
-  {
     "id": "devlop",
     "name": "开发版本【开发用】",
     "description": "供开发者参考开发的模板-建议开发者开发的时候复制模板使用。建议把本模板放到最后",

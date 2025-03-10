@@ -3,73 +3,7 @@ import { defineStore } from 'pinia';
 import { resumeTemplate } from '../data/resumeDataTemplate.ts';
 import { message } from 'ant-design-vue';
 // 定义类型
-export interface PersonalInfo {
-  name: string;
-  gender: string;
-  phone: string;
-  email: string;
-  university: string;
-  politicalStatus: string;
-  website: string;
-  avatar: string;
-  major: string;
-  applicationPosition: string;
-  age: string;
-}
-
-export interface Education {
-  id: number;
-  school: string;
-  degree: string;
-  major: string;
-  startDate: string;
-  endDate: string;
-}
-
-export interface WorkExperience {
-  id: number;
-  company: string;
-  position: string;
-  startDate: string | null;
-  endDate: string | null;
-  description: string;
-}
-
-export interface Skill {
-  id: number;
-  skillName: string;
-}
-
-export interface Project {
-  id: number;
-  projectName: string;
-  role: string;
-  startDate: string;
-  endDate: string;
-  // 项目简介
-  briefIntroduction: string;
-  description: string;
-
-}
-
-export interface Honor {
-  id: number;
-  honorName: string;
-  date: string;
-  description: string;
-}
-
-export interface ResumeState {
-  personalInfo: PersonalInfo;
-  education: Education[];
-  workExperience: WorkExperience[];
-  skills: Skill[];
-  projects: Project[];
-  honors: Honor[];
-  summary: string;
-  currentId: number;
-  isFirstVisit: boolean;
-}
+import type { Education, Honor, PersonalInfo, Project, ResumeState, Skill, WorkExperience, ResumeSetting } from '../types/resume';
 
 export const useResumeStore = defineStore('resume', {
   state: (): ResumeState => {
@@ -77,12 +11,21 @@ export const useResumeStore = defineStore('resume', {
     const savedResumeData = localStorage.getItem('resumeData');
     const savedCurrentId = localStorage.getItem('currentId');
     const isFirstVisit = localStorage.getItem('isFirstVisit') === null; // 检查是否首次访问
-
     const currentId = savedCurrentId && !isNaN(Number(savedCurrentId))
       ? Number(savedCurrentId)
       : 1;
-    const resumeData = savedResumeData ? JSON.parse(savedResumeData) : resumeTemplate;
-
+    //  此处首先用模板数据初始化，然后再从 localStorage 中读取数据
+    // 这样做的好处是，程序更新后，新增的字段会自动添加到模板中
+    let resumeData = JSON.parse(JSON.stringify(resumeTemplate));
+    // 如果本地有保存过的数据，则合并覆盖模板数据
+    if (savedResumeData) {
+      try {
+        const parsed = JSON.parse(savedResumeData);
+        resumeData = { ...resumeData, ...parsed };
+      } catch (e) {
+        console.error('解析 localStorage 失败:', e);
+      }
+    }
     // 如果是首次访问，标记并自动填充数据
     if (isFirstVisit) {
       localStorage.setItem('isFirstVisit', 'false');
@@ -109,10 +52,9 @@ export const useResumeStore = defineStore('resume', {
     },
     // 导出数据
     exportData() {
-      const dataStr = JSON.stringify(this.$state, null, 2); // 格式化 JSON 以便可读
+      const dataStr = JSON.stringify(this.$state, null, 2); // 格式化 JSON 
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
       a.download = "resume_data.json";
@@ -166,6 +108,11 @@ export const useResumeStore = defineStore('resume', {
     addItem<T extends { id: number }>(list: T[], newItem: Omit<T, 'id'>) {
       const newEntry = { ...newItem, id: this.currentId++ } as T;
       list.push(newEntry);
+      this.saveToLocalStorage();
+    },
+    // 简历设置内容
+    updateResumeSetting(updatedSetting: Partial<ResumeSetting>) {
+      this.resumeSetting = { ...this.resumeSetting, ...updatedSetting };
       this.saveToLocalStorage();
     },
 

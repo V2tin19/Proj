@@ -1,117 +1,141 @@
 <template>
   <div class="resume-container" :style="colorShadesStyle">
-    <!-- 个人信息区域 -->
-    <div class="header">
-      <div class="header-main">
-        <div class="personal-info">
+    <div class="header-decoration"></div>
+    <!-- 头部信息区域 -->
+    <header class="resume-header">
+      <div class="header-content">
+        <div class="header-main">
           <h1 class="name">{{ resume.personalInfo.name }}</h1>
-          <div class="info-row">
-            <span>{{ resume.personalInfo.gender }}</span>
-            <span>{{ resume.personalInfo.age }}岁</span>
-            <span>{{ resume.personalInfo.university }}</span>
-            <span>{{ resume.personalInfo.major }}</span>
+          <div class="basic-info">
+            <span v-if="resume.personalInfo.gender">{{ resume.personalInfo.gender }}</span>
+            <span v-if="resume.personalInfo.age">{{ resume.personalInfo.age }}岁</span>
+            <span v-if="resume.personalInfo.university">{{ resume.personalInfo.university }}</span>
+            <span v-if="resume.personalInfo.major">{{ resume.personalInfo.major }}</span>
+            <span v-if="resume.personalInfo.politicalStatus">{{ resume.personalInfo.politicalStatus }}</span>
+          </div>
+          <div class="contact-info">
+            <a v-if="resume.personalInfo.phone" class="contact-item">
+              <i class="fas fa-phone"></i>{{ resume.personalInfo.phone }}
+            </a>
+            <a v-if="resume.personalInfo.email" class="contact-item">
+              <i class="fas fa-envelope"></i>{{ resume.personalInfo.email }}
+            </a>
+            <a v-if="resume.personalInfo.website" :href="resume.personalInfo.website" target="_blank"
+              class="contact-item">
+              <i class="fas fa-globe"></i>{{ resume.personalInfo.website }}
+            </a>
+          </div>
+          <div v-if="resume.personalInfo.applicationPosition" class="job-target">
+            意向职位: {{ resume.personalInfo.applicationPosition }}
           </div>
         </div>
-        <div class="contact-info">
-          <div class="contact-item">
-            <span class="label">电话：</span>{{ resume.personalInfo.phone }}
-          </div>
-          <div class="contact-item">
-            <span class="label">邮箱：</span>{{ resume.personalInfo.email }}
-          </div>
-          <div class="contact-item" v-if="resume.personalInfo.website">
-            <span class="label">网站：</span>
-            <a :href="resume.personalInfo.website" target="_blank">{{ resume.personalInfo.website }}</a>
-          </div>
+        <div v-if="resume.personalInfo.avatar" class="avatar">
+          <img :src="resume.personalInfo.avatar" alt="头像">
         </div>
       </div>
-      <div class="avatar" v-if="resume.personalInfo.avatar">
-        <img :src="resume.personalInfo.avatar" alt="头像">
+    </header>
+
+    <!-- 个人总结 -->
+    <section v-if="resume.summary" class="resume-section">
+      <div class="section-icon">
+        <i class="fas fa-user"></i>
       </div>
-    </div>
+      <h2 class="section-title">个人总结</h2>
+      <div class="section-content summary" v-html="marked(resume.summary)"></div>
+    </section>
 
-    <!-- 主要内容区域 -->
-    <div class="content">
-      <!-- 个人总结 -->
-      <section class="section" v-if="resume.summary">
-        <h2 class="section-title">个人简介</h2>
-        <div class="section-content summary" v-html="marked(resume.summary)"></div>
-      </section>
-
-      <!-- 教育经历 -->
-      <section class="section" v-if="resume.education.length">
-        <h2 class="section-title">教育经历</h2>
-        <div class="section-content">
-          <div class="edu-item" v-for="edu in resume.education" :key="edu.id">
-            <div class="edu-header">
-              <span class="school">{{ edu.school }}</span>
-              <span class="time">{{ edu.startDate }} - {{ edu.endDate }}</span>
-            </div>
-            <div class="edu-info">{{ edu.major }} | {{ edu.degree }}</div>
+    <!-- 教育经历 -->
+    <section v-if="resume.education.length" class="resume-section">
+      <div class="section-icon">
+        <i class="fas fa-graduation-cap"></i>
+      </div>
+      <h2 class="section-title">教育经历</h2>
+      <div class="section-content">
+        <div v-for="edu in resume.education" :key="edu.id" class="education-item">
+          <div class="edu-main">
+            <span class="school">{{ edu.school }}</span>
+            <span v-if="edu.major" class="major">{{ edu.major }}</span>
+            <span v-if="edu.degree" class="degree">{{ edu.degree }}</span>
           </div>
+          <div class="edu-time">{{ edu.startDate }} ~ {{ edu.endDate }}</div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- 工作经历 -->
-      <section class="section" v-if="resume.workExperience.length">
-        <h2 class="section-title">工作经历</h2>
-        <div class="section-content">
-          <div class="work-item" v-for="work in resume.workExperience" :key="work.id">
-            <div class="work-header">
-              <div class="company">{{ work.company }}</div>
-              <div class="time">{{ work.startDate }} - {{ work.endDate }}</div>
-            </div>
-            <div class="position">{{ work.position }}</div>
-            <div class="description" v-html="marked(work.description)"></div>
+    <!-- 工作经历 -->
+    <section v-if="resume.workExperience.length" class="resume-section">
+      <div class="section-icon">
+        <i class="fas fa-briefcase"></i>
+      </div>
+      <h2 class="section-title">工作经历</h2>
+      <div class="section-content">
+        <div v-for="work in resume.workExperience" :key="work.id" class="work-item">
+          <div class="work-header">
+            <h3 class="company">{{ work.company }}</h3>
+            <div v-if="work.position" class="position">{{ work.position }}</div>
+            <span class="time">{{ work.startDate }} ~ {{ work.endDate }}</span>
           </div>
-        </div>
-      </section>
 
-      <!-- 项目经验 -->
-      <section class="section" v-if="resume.projects.length">
-        <h2 class="section-title">项目经验</h2>
-        <div class="section-content">
-          <div class="project-item" v-for="project in resume.projects" :key="project.id">
-            <div class="project-header">
-              <div class="project-name">{{ project.projectName }}</div>
-              <div class="time">{{ project.startDate }} - {{ project.endDate }}</div>
-            </div>
-            <div class="role">{{ project.role }}</div>
-            <div class="brief" v-html="marked(project.briefIntroduction)"></div>
-            <ul class="details">
-              <li v-for="(desc, index) in String(project.description || '').split('\n')" :key="index"
-                v-html="marked(desc)"></li>
-            </ul>
+          <div v-if="work.description" class="description" v-html="marked(work.description)"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 项目经历 -->
+    <section v-if="resume.projects.length" class="resume-section">
+      <div class="section-icon">
+        <i class="fas fa-project-diagram"></i>
+      </div>
+      <h2 class="section-title">项目经历</h2>
+      <div class="section-content">
+        <div v-for="project in resume.projects" :key="project.id" class="project-item">
+          <div class="project-header">
+            <h3 class="project-name">{{ project.projectName }}</h3>
+            <div v-if="project.role" class="role">{{ project.role }}</div>
+            <span class="time">{{ project.startDate }} ~ {{ project.endDate }}</span>
           </div>
-        </div>
-      </section>
 
-      <!-- 技能特长 -->
-      <section class="section" v-if="resume.skills.length">
-        <h2 class="section-title">技能特长</h2>
-        <div class="section-content skills">
-          <span class="skill-tag" v-for="skill in resume.skills" :key="skill.id"
-            v-html="marked(skill.skillName)"></span>
+          <div v-if="project.briefIntroduction" class="brief" v-html="marked(project.briefIntroduction)"></div>
+          <ul v-if="project.description" class="description-list">
+            <li v-for="(desc, index) in String(project.description).split('\n')" :key="index" v-html="marked(desc)">
+            </li>
+          </ul>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- 荣誉奖项 -->
-      <section class="section" v-if="resume.honors.length">
-        <h2 class="section-title">荣誉奖项</h2>
-        <div class="section-content">
-          <div class="honor-item" v-for="honor in resume.honors" :key="honor.id">
-            <span class="honor-name" v-html="marked(honor.honorName)"></span>
-            <span class="honor-date">{{ honor.date }}</span>
-          </div>
+    <!-- 技能特长 -->
+    <section v-if="resume.skills.length" class="resume-section">
+      <div class="section-icon">
+        <i class="fas fa-tools"></i>
+      </div>
+      <h2 class="section-title">技能特长</h2>
+      <div class="section-content">
+        <div class="skills-list">
+          <p v-for="skill in resume.skills" :key="skill.id" class="skill-item" v-html="marked(skill.skillName)"></p>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
+
+    <!-- 荣誉奖项 -->
+    <section v-if="resume.honors.length" class="resume-section">
+      <div class="section-icon">
+        <i class="fas fa-award"></i>
+      </div>
+      <h2 class="section-title">荣誉奖项</h2>
+      <div class="section-content">
+        <div v-for="honor in resume.honors" :key="honor.id" class="honor-item">
+          <span class="honor-name" v-html="marked(honor.honorName)"></span>
+          <span class="honor-date">{{ honor.date }}</span>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useResumeStore } from '../../store/useResumeStore';
-import { computed } from 'vue';
+import { computed, watch, onMounted } from 'vue';
 import type { ColorShades } from '../../types/color';
 import { marked } from 'marked';
 
@@ -120,6 +144,10 @@ const props = defineProps<{
   colorShades: ColorShades;
 }>();
 
+// 引入引用的store
+const resumeStore = useResumeStore();
+const resume = computed(() => resumeStore.$state);
+
 // 动态生成 CSS 变量的样式
 const colorShadesStyle = computed(() => ({
   '--color-lighter': props.colorShades.lighter,
@@ -127,75 +155,424 @@ const colorShadesStyle = computed(() => ({
   '--color-base': props.colorShades.base,
   '--color-dark': props.colorShades.dark,
   '--color-darker': props.colorShades.darker,
+  '--paragraph-spacing': `${resume.value.resumeSetting.paragraphSpacing}px`,
+  '--section-spacing': `${resume.value.resumeSetting.sectionSpacing}px`,
+  '--padding-left-right': `${resume.value.resumeSetting.padding_left_right}px`,
+  '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
 }));
 
-// 引入引用的store
-const resumeStore = useResumeStore();
+// 组件挂载时设置字体大小
+onMounted(() => {
+  updateFontSize();
+});
 
-// 使用计算属性来获取store中的数据
-const resume = computed(() => resumeStore.$state);
+// 更新字体大小的函数
+const updateFontSize = () => {
+  document.documentElement.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
+  document.body.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
+};
+
+// 监听字体大小变化
+watch(
+  () => resume.value.resumeSetting.fontSize,
+  (newSize) => {
+    updateFontSize();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>
 .resume-container {
   max-width: 210mm;
+  min-height: 297mm;
   margin: 0 auto;
-  padding: 30px 40px;
+  padding: var(--padding-top-bottom) var(--padding-left-right);
   background: white;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
   color: #2c3e50;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.4;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-size: 1rem;
+  /* 使用相对单位，基于根元素字体大小 */
 }
 
-/* 头部样式 */
-.header {
+/* 移除所有动画效果和设置盒模型 */
+*,
+*::before,
+*::after {
+  transition: none !important;
+  transform: none !important;
+  box-sizing: border-box;
+}
+
+/* 移除所有默认段落边距并应用用户设置 */
+:deep(p) {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+}
+
+/* 调整段落间距 */
+:deep(p + p) {
+  margin-top: var(--paragraph-spacing) !important;
+}
+
+/* 调整章节间距 */
+.resume-section {
+  margin-bottom: var(--section-spacing);
+  position: relative;
+  padding-left: 25px;
+}
+
+/* 调整内容间距 */
+.section-content {
+  margin-bottom: var(--paragraph-spacing);
+}
+
+/* 调整项目间距 */
+.education-item,
+.work-item,
+.project-item,
+.honor-item {
+  margin-bottom: var(--paragraph-spacing);
+  padding-bottom: var(--paragraph-spacing);
+}
+
+/* 调整头部样式 */
+.resume-header {
+  background: var(--color-base);
+  margin: calc(-1 * var(--padding-top-bottom)) calc(-1 * var(--padding-left-right)) var(--section-spacing);
+  padding: var(--padding-top-bottom) var(--padding-left-right);
+  color: white;
+  position: relative;
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 95%);
+  z-index: 1;
+}
+
+li {
+  list-style-type: none;
+}
+
+/* 打印样式优化 */
+@media print {
+
+  html,
+  body {
+    font-size: 1rem !important;
+    /* 确保打印时字体大小正确 */
+  }
+
+  .resume-container {
+    margin: 0;
+    padding: var(--padding-top-bottom) var(--padding-left-right);
+    box-shadow: none;
+    min-height: 297mm;
+    font-size: 1rem;
+  }
+}
+
+/* 头部装饰 */
+.header-decoration {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  background: var(--color-lighter);
+  opacity: 0.1;
+  border-radius: 0 0 0 100%;
+  z-index: 0;
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--color-lighter);
+  gap: 20px;
 }
 
 .header-main {
   flex: 1;
+  min-height: 135px;
 }
 
 .name {
-  font-size: 28px;
-  color: var(--color-darker);
-  margin: 0 0 12px;
+  font-size: 1.5em;
+  margin: 0 0 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
-.info-row {
+.basic-info {
   display: flex;
-  gap: 20px;
-  color: var(--color-dark);
-  font-size: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: inherit;
+  opacity: 0.9;
 }
 
 .contact-info {
-  margin-top: 15px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
 .contact-item {
-  font-size: 14px;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: inherit;
 }
 
-.label {
+.job-target {
+  font-size: inherit;
+  opacity: 0.9;
+}
+
+/* 章节通用样式优化 */
+.section-title {
+  font-size: 15px;
   color: var(--color-base);
-  margin-right: 5px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-lighter);
+  margin-left: 8px;
+}
+
+/* 教育经历样式优化 */
+.education-item {
+  border-bottom: 1px dashed var(--color-lighter);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.edu-main {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.school {
+  font-size: 15px;
+}
+
+.major,
+.degree {
+  color: #666;
+  font-size: 13px;
+}
+
+.edu-time {
+  color: #666;
+  font-size: 13px;
+}
+
+/* 工作经历样式优化 */
+.work-item {
+  border-bottom: 1px solid var(--color-lighter);
+}
+
+.work-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--paragraph-spacing);
+}
+
+.company {
+  font-size: inherit;
+  font-weight: 500;
+}
+
+.position {
+  color: var(--color-base);
+  margin-bottom: var(--paragraph-spacing);
+  font-size: inherit;
+}
+
+.description {
+  color: #444;
+  font-size: inherit;
+}
+
+/* 项目经历样式优化 */
+.project-item {
+  border-radius: 4px;
+}
+
+
+
+.project-header {
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.project-name {
+  font-size: 15px;
+}
+
+.role,
+.brief,
+.description-list {
+  font-size: 13px;
+}
+
+.role {
+  color: var(--color-base);
+  margin-bottom: 8px;
+}
+
+.brief {
+  margin-bottom: 8px;
+}
+
+.description-list {
+  margin: 6px 0;
+  padding-left: 15px;
+  list-style-type: circle;
+}
+
+.description-list li {
+  margin-bottom: 3px;
+  position: relative;
+}
+
+/* 技能标签样式优化 */
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.skill-item {
+  font-size: inherit;
+  color: var(--color-base);
+  position: relative;
+  margin-right: 12px;
+  padding: 0 !important;
+}
+
+.skill-item::after {
+  content: '•';
+  position: absolute;
+  right: -10px;
+  color: var(--color-light);
+}
+
+.skill-item:last-child::after {
+  display: none;
+}
+
+/* 荣誉奖项样式优化 */
+.honor-item {
+  border-bottom: 1px dashed var(--color-lighter);
+}
+
+.honor-name {
+  font-weight: 500;
+}
+
+.honor-date {
+  color: #666;
+}
+
+/* 通用文本样式 */
+.time,
+.position,
+.role,
+.brief,
+.description {
+  font-size: inherit;
+  color: #666;
+}
+
+.company,
+.project-name,
+.school {
+  font-weight: 500;
+  color: var(--color-dark);
+  font-size: inherit;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .resume-container {
+    padding: 15px;
+  }
+
+  .resume-header {
+    margin: -15px -15px 20px;
+    padding: 20px 15px 25px;
+  }
+
+  .header-decoration {
+    display: none;
+  }
+
+  .header-content {
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .avatar {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .header-main {
+    text-align: center;
+  }
+
+  .basic-info,
+  .contact-info {
+    justify-content: center;
+  }
+
+  .education-item {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .work-header {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .name {
+    font-size: 1.3em;
+  }
+
+  .avatar {
+    width: 4rem;
+    height: 4rem;
+  }
 }
 
 .avatar {
-  width: 100px;
-  height: 100px;
+  width: 6rem;
+  height: 6rem;
   border-radius: 50%;
   overflow: hidden;
-  margin-left: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .avatar img {
@@ -204,162 +581,11 @@ const resume = computed(() => resumeStore.$state);
   object-fit: cover;
 }
 
-/* 内容区域样式 */
-.section {
-  margin-bottom: 30px;
-}
-
-.section-title {
-  font-size: 18px;
-  color: var(--color-darker);
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-lighter);
-  position: relative;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 50px;
-  height: 2px;
-  background: var(--color-base);
-}
-
-/* 教育经历样式 */
-.edu-item {
-  margin-bottom: 15px;
-}
-
-.edu-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-}
-
-.school {
-  font-weight: 500;
-  color: var(--color-dark);
-}
-
-.time {
-  color: var(--color-base);
-  font-size: 14px;
-}
-
-/* 工作经历样式 */
-.work-item {
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px dashed var(--color-lighter);
-}
-
-.work-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.company {
-  font-weight: 500;
-  color: var(--color-dark);
-}
-
-.position {
-  color: var(--color-base);
-  margin-bottom: 8px;
-}
-
-.description {
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* 项目经验样式 */
-.project-item {
-  margin-bottom: 25px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.project-name {
-  font-weight: 500;
-  color: var(--color-dark);
-}
-
-.role {
-  color: var(--color-base);
-  font-size: 14px;
-  margin: 5px 0;
-}
-
-.brief {
-  font-size: 14px;
-  margin: 8px 0;
-}
-
-.details {
-  list-style-type: circle;
-  padding-left: 20px;
-  margin: 10px 0;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* 技能标签样式 */
-.skills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.skill-tag {
-  padding: 5px 12px;
-  background: var(--color-lighter);
-  border-radius: 15px;
-  font-size: 13px;
-  color: var(--color-dark);
-}
-
-/* 荣誉奖项样式 */
-.honor-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--color-lighter);
-}
-
-.honor-name {
-  color: var(--color-dark);
-}
-
-.honor-date {
-  color: var(--color-base);
-  font-size: 14px;
-}
-
-@media (max-width: 768px) {
-  .resume-container {
-    padding: 20px;
-  }
-
-  .header {
-    flex-direction: column;
-  }
-
-  .avatar {
-    margin: 20px auto 0;
-  }
-
-  .contact-info {
-    grid-template-columns: 1fr;
-  }
-}
-
 :deep(strong) {
   color: var(--color-base) !important;
+}
+
+:deep(p) {
+  margin: 0 !important;
 }
 </style>

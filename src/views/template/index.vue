@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { ShopOutlined, CheckCircleFilled } from '@ant-design/icons-vue';
 import { getTemplates } from "../../utils/getTemplates";
 import type { Template } from "../../types/template";
-import { useTemplateStore } from "../../store";
+import { useResumeStore } from "../../store";
+import { storeToRefs } from 'pinia';
 
 // 模板列表
 const templates = ref<Template[]>([]);
-const templateStore = useTemplateStore();
+const resumeStore = useResumeStore();
+const { resumeSetting } = storeToRefs(resumeStore);
+
+// 当前选中的模板ID
+const currentTemplate = computed({
+  get: () => resumeSetting.value.currentTemplate,
+  set: (val) => resumeStore.updateResumeSetting({ currentTemplate: val })
+})
 
 // 获取并初始化模板列表
 onMounted(async () => {
@@ -21,11 +29,11 @@ onMounted(async () => {
 });
 
 // 处理模板切换
-const handleTemplateChange = (id: string | null) => {
+const handleTemplateChange = (id: String | null) => {
   if (!id) return;
   const selectedTemplate = templates.value.find(t => t.id === id);
   if (selectedTemplate) {
-    templateStore.currentTemplate = selectedTemplate;
+    currentTemplate.value = selectedTemplate.id;
     message.success(`成功切换到模板: ${selectedTemplate.name}`); // 提示选择成功
   }
 };
@@ -54,10 +62,10 @@ const getTemplateImage = (template: Template): string => {
     <!-- 模板列表 -->
     <div class="template-grid">
       <div v-for="(template, index) in templates" :key="index" class="template-card-wrapper">
-        <a-card :bordered="false" :class="{ 'selected-template': templateStore.currentTemplate?.id === template.id }"
+        <a-card :bordered="false" :class="{ 'selected-template': currentTemplate === template.id }"
           class="template-card" :bodyStyle="{ padding: '12px' }">
           <!-- 选中标记 -->
-          <div v-if="templateStore.currentTemplate?.id === template.id" class="selected-badge">
+          <div v-if="currentTemplate === template.id" class="selected-badge">
             <check-circle-filled />
           </div>
 
@@ -73,10 +81,10 @@ const getTemplateImage = (template: Template): string => {
                 作者：<a :href="String(template.link || '')" target="_blank">{{ template.author }}</a>
               </div>
               <p class="template-description">{{ template.description }}</p>
-              <a-button :type="templateStore.currentTemplate?.id === template.id ? 'text' : 'primary'"
-                :class="{ 'selected-button': templateStore.currentTemplate?.id === template.id }"
+              <a-button :type="currentTemplate === template.id ? 'text' : 'primary'"
+                :class="{ 'selected-button': currentTemplate === template.id }"
                 @click="handleTemplateChange(template.id)" size="small" block>
-                {{ templateStore.currentTemplate?.id === template.id ? '当前使用中' : '使用此模板' }}
+                {{ currentTemplate === template.id ? '当前使用中' : '使用此模板' }}
               </a-button>
             </div>
           </div>
