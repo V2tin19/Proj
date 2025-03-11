@@ -3,7 +3,11 @@ import { defineStore } from 'pinia';
 import { resumeTemplate } from '../data/resumeDataTemplate.ts';
 import { message } from 'ant-design-vue';
 // 定义类型
-import type { Education, Honor, PersonalInfo, Project, ResumeState, Skill, WorkExperience, ResumeSetting } from '../types/resume';
+import type {
+  Education, Honor, PersonalInfo,
+  Project, ResumeState, Skill,
+  WorkExperience, ResumeSetting
+} from '../types/resume';
 
 export const useResumeStore = defineStore('resume', {
   state: (): ResumeState => {

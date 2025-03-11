@@ -45,7 +45,6 @@ export interface Project {
   // 项目简介
   briefIntroduction: string;
   description: string;
-
 }
 
 export interface Honor {
