@@ -71,11 +71,13 @@ export const resumeTemplate = {
   summary: '',
   // 简历设置
   resumeSetting: {
-    themeColor1: '#203CCB',  // 主题颜色1（深色）
-    themeColor2: '#203CCB',  // 主题颜色2（浅色）
-    fontSize: 16,         // 字体大小
-    sectionSpacing: 20,   // 板块之间的间距
-    paragraphSpacing: 10,  // 段落之间的间距
-    currentTemplate: 202501  // 默认简历模板id
+    themeColor1: "#3653c9",  // 主题颜色1（深色）
+    themeColor2: "#bdcbff",  // 主题颜色2（浅色）
+    fontSize: 13,
+    sectionSpacing: 1,
+    paragraphSpacing: 0,
+    currentTemplate: "202501",
+    padding_top_bottom: 4,
+    padding_left_right: 15
   }
 } as const;
