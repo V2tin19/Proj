@@ -55,7 +55,11 @@ npm install
 npm run dev
 ```
 
+## 🔥想自己部署同样的项目？
 
+点击此处链接，[发行版本](https://github.com/weidong-repo/AIResume/releases)
+找到最新版本的release.zip
+然后把release.zip解压部署到您网站根目录上，访问域名即可
 
 ## 🔥欢迎有前端能力的朋友开发简历模板加入项目
 
@@ -138,6 +142,6 @@ https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 
 🔥 **欢迎 Star & Fork 本项目，一起完善 AIResume！**
 
-# 历史记录
+# Stars历史记录
 
 [![Star History Chart](https://api.star-history.com/svg?repos=weidong-repo/AIResume&type=Date)](https://www.star-history.com/#weidong-repo/AIResume&Date)
