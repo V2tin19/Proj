@@ -137,3 +137,7 @@ https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 - [ ] **数据隐藏功能**（支持隐藏部分信息，但数据仍保留）
 
 🔥 **欢迎 Star & Fork 本项目，一起完善 AIResume！**
+
+# 历史记录
+
+[![Star History Chart](https://api.star-history.com/svg?repos=weidong-repo/AIResume&type=Date)](https://www.star-history.com/#weidong-repo/AIResume&Date)
