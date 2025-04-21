@@ -57,7 +57,7 @@
             <span v-if="edu.major" class="major">{{ edu.major }}</span>
             <span v-if="edu.degree" class="degree">{{ edu.degree }}</span>
           </div>
-          <div class="edu-time">{{ edu.startDate }} ~ {{ edu.endDate }}</div>
+          <div v-if="edu.startDate" class="edu-time">{{ edu.startDate }} ~ {{ edu.endDate || '至今' }}</div>
         </div>
       </div>
     </section>
@@ -73,7 +73,7 @@
           <div class="work-header">
             <h3 class="company">{{ work.company }}</h3>
             <div v-if="work.position" class="position">{{ work.position }}</div>
-            <span class="time">{{ work.startDate }} ~ {{ work.endDate }}</span>
+            <span v-if="work.startDate" class="time">{{ work.startDate }} ~ {{ work.endDate || '至今' }}</span>
           </div>
 
           <div v-if="work.description" class="description" v-html="marked(work.description)"></div>
@@ -92,7 +92,7 @@
           <div class="project-header">
             <h3 class="project-name">{{ project.projectName }}</h3>
             <div v-if="project.role" class="role">{{ project.role }}</div>
-            <span class="time">{{ project.startDate }} ~ {{ project.endDate }}</span>
+            <span v-if="project.startDate" class="time">{{ project.startDate }} ~ {{ project.endDate || '至今' }}</span>
           </div>
 
           <div v-if="project.briefIntroduction" class="brief" v-html="marked(project.briefIntroduction)"></div>
