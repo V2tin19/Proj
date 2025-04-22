@@ -55,7 +55,7 @@
         <div class="experience-item" v-for="edu in resume.education" :key="edu.id">
           <div class="item-header">
             <h3 class="institution">{{ edu.school }}</h3>
-            <span class="duration">{{ edu.startDate }} - {{ edu.endDate }}</span>
+            <span v-if="edu.startDate" class="duration">{{ edu.startDate }} - {{ edu.endDate || '至今' }}</span>
           </div>
           <p class="degree">{{ edu.degree }} - {{ edu.major }}</p>
         </div>
@@ -78,7 +78,7 @@
           <div class="item-header">
             <p class="company">{{ work.company }}</p>
             <h3 class="position">{{ work.position }}</h3>
-            <span class="duration">{{ work.startDate }} - {{ formatEndDate(work.endDate) }}</span>
+            <span v-if="work.startDate" class="duration">{{ work.startDate }} - {{ work.endDate || '至今' }}</span>
           </div>
 
           <ul class="description-list">
@@ -96,7 +96,7 @@
           <div class="item-header">
             <h3 class="project-name">{{ project.projectName }}</h3>
             <p class="role">{{ project.role }}</p>
-            <span class="duration">{{ project.startDate }} - {{ formatEndDate(project.endDate) }}</span>
+            <span v-if="project.startDate" class="duration">{{ project.startDate }} - {{ project.endDate || '至今' }}</span>
           </div>
           <p class="project-intro" v-html="marked(project.briefIntroduction)"></p>
           <ul class="description-list">
@@ -125,7 +125,7 @@ const resume = computed(() => resumeStore.$state);
 
 // 处理结束日期的显示
 const formatEndDate = (endDate: string | null) => {
-  if (!endDate) return '';
+  if (!endDate) return '至今';
   const today = new Date();
   const end = new Date(endDate);
   return end > today ? '至今' : endDate;
@@ -250,8 +250,6 @@ watch(
   margin-bottom: var(--paragraph-spacing);
 }
 
-
-
 .experience-list {
   display: flex;
   flex-direction: column;
@@ -274,8 +272,6 @@ watch(
 .position,
 .project-name {
   font-size: 1rem;
-
-
 }
 
 .duration {

@@ -70,7 +70,7 @@
           <p class="school">
             <span>{{ edu.school }}({{ edu.degree }})</span>
             <span>{{ edu.major }}</span>
-            <b v-if="edu.startDate && edu.endDate">{{ edu.startDate }} 至 {{ edu.endDate }}</b>
+            <b v-if="edu.startDate">{{ edu.startDate }} 至 {{ edu.endDate || '至今' }}</b>
           </p>
         </div>
       </div>
@@ -92,8 +92,7 @@
             <div class="work-header">
               <span>{{ work.company }}</span>
               <span>{{ work.position }}</span>
-              <span>{{ work.startDate }} <span v-if="work.startDate && work.endDate">至</span> {{
-                formatEndDate(work.endDate) }}</span>
+              <span v-if="work.startDate">{{ work.startDate }} 至 {{ work.endDate || '至今' }}</span>
             </div>
           </div>
           <ul>
@@ -112,8 +111,7 @@
             <div class="project-header">
               <span>{{ project.projectName }}</span>
               <span>{{ project.role }}</span>
-              <span>{{ project.startDate }} <span v-if="project.startDate && project.endDate">至</span> {{
-                formatEndDate(project.endDate) }}</span>
+              <span v-if="project.startDate">{{ project.startDate }} 至 {{ project.endDate || '至今' }}</span>
             </div>
             <hr>
             <p class="project-introduction" v-html="marked(project.briefIntroduction)"></p>
@@ -144,7 +142,7 @@ const resume = computed(() => resumeStore.$state);
 
 // 处理结束日期的显示
 const formatEndDate = (endDate: string | null) => {
-  if (!endDate) return '';
+  if (!endDate) return '至今';
   const today = new Date();
   const end = new Date(endDate);
   return end > today ? '至今' : endDate;
