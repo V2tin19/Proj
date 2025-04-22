@@ -90,7 +90,8 @@
           <div class="proj-header">
             <h3>{{ project.projectName }}</h3>
             <div class="proj-role">{{ project.role }}</div>
-            <span v-if="project.startDate" class="proj-date">{{ project.startDate }} - {{ project.endDate || '至今' }}</span>
+            <span v-if="project.startDate" class="proj-date">{{ project.startDate }} - {{ project.endDate || '至今'
+              }}</span>
           </div>
 
           <div class="proj-brief" v-html="marked(project.briefIntroduction)"></div>
@@ -118,13 +119,7 @@ import { marked } from 'marked';
 const resumeStore = useResumeStore();
 const resume = computed(() => resumeStore.$state);
 
-// 处理结束日期的显示
-const formatEndDate = (endDate: string | null) => {
-  if (!endDate) return '至今';
-  const today = new Date();
-  const end = new Date(endDate);
-  return end > today ? '至今' : endDate;
-};
+
 
 // 判断是否有联系方式信息
 const hasContactInfo = computed(() => {

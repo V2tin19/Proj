@@ -96,7 +96,8 @@
           <div class="item-header">
             <h3 class="project-name">{{ project.projectName }}</h3>
             <p class="role">{{ project.role }}</p>
-            <span v-if="project.startDate" class="duration">{{ project.startDate }} - {{ project.endDate || '至今' }}</span>
+            <span v-if="project.startDate" class="duration">{{ project.startDate }} - {{ project.endDate || '至今'
+              }}</span>
           </div>
           <p class="project-intro" v-html="marked(project.briefIntroduction)"></p>
           <ul class="description-list">
@@ -123,13 +124,6 @@ import { marked } from 'marked';
 const resumeStore = useResumeStore();
 const resume = computed(() => resumeStore.$state);
 
-// 处理结束日期的显示
-const formatEndDate = (endDate: string | null) => {
-  if (!endDate) return '至今';
-  const today = new Date();
-  const end = new Date(endDate);
-  return end > today ? '至今' : endDate;
-};
 
 // 合并所有样式到一个计算属性
 const resumeStyle = computed(() => {
