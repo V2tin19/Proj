@@ -171,14 +171,14 @@ watch(
 .education-item {
   width: 100%;
   position: relative;
-  padding-left: 28px;
   border-radius: 8px;
 }
 
 .item-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
@@ -186,13 +186,14 @@ watch(
   margin: 0;
 }
 
+.item-header > :last-child {
+  justify-self: end;
+}
+
 .item-drag-handle {
-  position: absolute;
-  left: 0;
-  top: 16px;
   width: 24px;
   height: 24px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
