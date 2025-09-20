@@ -55,6 +55,16 @@ export interface Honor {
 }
 
 
+export type SectionKey =
+  | 'personalInfo'
+  | 'education'
+  | 'projects'
+  | 'workExperience'
+  | 'skills'
+  | 'honors'
+  | 'summary';
+
+
 export interface ResumeSetting {
   themeColor1: string;  // 主题颜色1（深色）
   themeColor2: string;  // 主题颜色2（浅色）
@@ -74,6 +84,7 @@ export interface ResumeState {
   projects: Project[];
   honors: Honor[];
   summary: string;
+  sectionOrder: SectionKey[];
   currentId: number;
   isFirstVisit: boolean;
   resumeSetting: ResumeSetting;

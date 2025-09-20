@@ -1,3 +1,5 @@
+import { DEFAULT_SECTION_ORDER } from '../constants/sectionOrder';
+
 export const resumeTemplate = {
   // 基本信息
   personalInfo: {
@@ -69,6 +71,7 @@ export const resumeTemplate = {
   ],
   // 自我评价
   summary: '',
+  sectionOrder: [...DEFAULT_SECTION_ORDER],
   // 简历设置
   resumeSetting: {
     themeColor1: "#3653c9",  // 主题颜色1（深色）

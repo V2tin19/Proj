@@ -1,7 +1,7 @@
 <template>
   <div class="resume-container" :style="resumeStyle">
     <!-- 个人信息 -->
-    <section class="personal-info">
+    <section class="personal-info" :style="sectionStyle('personalInfo')">
       <div class="personal-details">
         <div class="detail-row">
           <div class="detail-item name" v-if="resume.personalInfo.name">
@@ -55,7 +55,7 @@
     </section>
 
     <!-- 荣誉奖项、复用skills样式 -->
-    <section class="section skills-section" v-if="resume.honors.length">
+    <section class="section skills-section" v-if="resume.honors.length" :style="sectionStyle('honors')">
       <div class="section-title">荣誉奖项</div>
       <ul class="skills-list">
         <li v-for="honor in resume.honors" :key="honor.id" v-html="marked(honor.honorName)"></li>
@@ -63,7 +63,7 @@
     </section>
 
     <!-- 在校经历 -->
-    <section class="section education-section" v-if="resume.education.length">
+    <section class="section education-section" v-if="resume.education.length" :style="sectionStyle('education')">
       <div class="section-title">教育经历</div>
       <div class="section-content">
         <div class="item" v-for="edu in resume.education" :key="edu.id">
@@ -77,14 +77,14 @@
     </section>
 
     <!-- 技能特长 -->
-    <section class="section skills-section" v-if="resume.skills.length">
+    <section class="section skills-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
       <div class="section-title">技能特长</div>
       <ul class="skills-list">
         <li v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></li>
       </ul>
     </section>
     <!-- 工作/实习经历 -->
-    <section class="section experience-section" v-if="resume.workExperience.length">
+    <section class="section experience-section" v-if="resume.workExperience.length" :style="sectionStyle('workExperience')">
       <div class="section-title">工作/实习经历</div>
       <div class="section-content">
         <div class="item" v-for="work in resume.workExperience" :key="work.id">
@@ -103,7 +103,7 @@
     </section>
 
     <!-- 项目经验 -->
-    <section class="section projects-section" v-if="resume.projects.length">
+    <section class="section projects-section" v-if="resume.projects.length" :style="sectionStyle('projects')">
       <div class="section-title">项目经验</div>
       <div class="section-content">
         <div class="item" v-for="project in resume.projects" :key="project.id">
@@ -124,7 +124,7 @@
     </section>
 
     <!-- 自我评价 -->
-    <section class="section self-evaluation-section" v-if="resume.summary">
+    <section class="section self-evaluation-section" v-if="resume.summary" :style="sectionStyle('summary')">
       <div class="section-title">自我评价</div>
       <p class="self-evaluation" v-html="marked(resume.summary)"></p>
     </section>
@@ -135,6 +135,8 @@
 import { useResumeStore } from '../../store/useResumeStore';
 import { computed, watch, onMounted } from 'vue';
 import { marked } from 'marked';
+import { normalizeSectionOrder } from '../../constants/sectionOrder';
+import type { SectionKey } from '../../types/resume';
 
 // 引入引用的store
 const resumeStore = useResumeStore();
@@ -152,6 +154,16 @@ const resumeStyle = computed(() => {
     '--themeColor2': resume.value.resumeSetting.themeColor2
   };
 });
+
+const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
+
+const sectionStyle = (key: SectionKey, offset = 0) => {
+  const index = sectionOrder.value.indexOf(key);
+  const base = index === -1 ? sectionOrder.value.length : index;
+  return {
+    order: base + offset,
+  };
+};
 
 // 组件挂载时设置字体大小
 onMounted(() => {
@@ -180,6 +192,8 @@ watch(
   border-radius: 10px;
   box-sizing: border-box;
   font-family: 'zql', sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(p) {

@@ -2,7 +2,7 @@
   <div class="resume-container" :style="resumeStyle">
     <!-- 左侧边栏 -->
     <aside class="sidebar">
-      <div class="profile-section">
+      <div class="profile-section" :style="sectionStyle('personalInfo')">
         <div class="avatar-wrapper" v-if="resume.personalInfo.avatar">
           <img :src="resume.personalInfo.avatar" alt="头像" class="avatar">
         </div>
@@ -11,7 +11,7 @@
         </p>
       </div>
 
-      <div class="contact-section" v-if="hasContactInfo">
+      <div class="contact-section" v-if="hasContactInfo" :style="sectionStyle('personalInfo', 0.1)">
         <div class="contact-item" v-if="resume.personalInfo.gender">
           <i class="fas fa-user"></i>
           <span>性别：{{ resume.personalInfo.gender }}</span>
@@ -46,7 +46,7 @@
         </div>
       </div>
 
-      <div class="side-section" v-if="resume.education.length">
+      <div class="side-section" v-if="resume.education.length" :style="sectionStyle('education')">
         <h2 class="side-title">教育背景</h2>
         <div class="education-item" v-for="edu in resume.education" :key="edu.id">
           <h3>{{ edu.school }}</h3>
@@ -56,7 +56,7 @@
         </div>
       </div>
 
-      <div class="side-section" v-if="resume.skills.length">
+      <div class="side-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
         <h2 class="side-title">技能特长</h2>
         <div class="skills-wrapper">
           <p class="skill-tag" v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></p>
@@ -66,12 +66,12 @@
 
     <!-- 主要内容区域 -->
     <main class="main-content">
-      <section class="content-section" v-if="resume.summary">
+      <section class="content-section" v-if="resume.summary" :style="sectionStyle('summary')">
         <h2 class="section-title">个人简介</h2>
         <p class="summary" v-html="marked(resume.summary)"></p>
       </section>
 
-      <section class="content-section" v-if="resume.workExperience.length">
+      <section class="content-section" v-if="resume.workExperience.length" :style="sectionStyle('workExperience')">
         <h2 class="section-title">工作经历</h2>
         <div class="experience-item" v-for="work in resume.workExperience" :key="work.id">
           <div class="exp-header">
@@ -84,7 +84,7 @@
         </div>
       </section>
 
-      <section class="content-section" v-if="resume.projects.length">
+      <section class="content-section" v-if="resume.projects.length" :style="sectionStyle('projects')">
         <h2 class="section-title">项目经验</h2>
         <div class="project-item" v-for="project in resume.projects" :key="project.id">
           <div class="proj-header">
@@ -99,7 +99,7 @@
         </div>
       </section>
 
-      <section class="content-section" v-if="resume.honors.length">
+      <section class="content-section" v-if="resume.honors.length" :style="sectionStyle('honors')">
         <h2 class="section-title">荣誉奖项</h2>
         <p v-for="honor in resume.honors" :key="honor.id" class="honor-item">
           <span v-html="marked(honor.honorName)"></span>
@@ -114,6 +114,8 @@
 import { useResumeStore } from '../../store/useResumeStore';
 import { computed, watch, onMounted } from 'vue';
 import { marked } from 'marked';
+import { normalizeSectionOrder } from '../../constants/sectionOrder';
+import type { SectionKey } from '../../types/resume';
 
 // 引用的store
 const resumeStore = useResumeStore();
@@ -138,6 +140,16 @@ const resumeStyle = computed(() => {
     '--themeColor2': resume.value.resumeSetting.themeColor2
   };
 });
+
+const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
+
+const sectionStyle = (key: SectionKey, offset = 0) => {
+  const index = sectionOrder.value.indexOf(key);
+  const base = index === -1 ? sectionOrder.value.length : index;
+  return {
+    order: base + offset,
+  };
+};
 
 // 组件挂载时设置字体大小
 onMounted(() => {
@@ -298,6 +310,8 @@ watch(
   padding: calc(var(--padding-top-bottom) * 0.8) calc(var(--padding-left-right) * 0.8);
   background: white;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .content-section {
