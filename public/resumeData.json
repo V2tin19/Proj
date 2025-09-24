@@ -113,5 +113,14 @@
     "padding_left_right": 15
   },
   "currentId": 35,
-  "isFirstVisit": false
+  "isFirstVisit": false,
+  "sectionOrder": [
+    "personalInfo",
+    "education",
+    "projects",
+    "workExperience",
+    "skills",
+    "honors",
+    "summary"
+  ]
 }
