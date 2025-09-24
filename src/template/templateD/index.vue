@@ -2,7 +2,7 @@
   <div class="resume-container" :style="colorShadesStyle">
     <div class="header-decoration"></div>
     <!-- 头部信息区域 -->
-    <header class="resume-header">
+    <header class="resume-header" :style="sectionStyle('personalInfo')">
       <div class="header-content">
         <div class="header-main">
           <h1 class="name">{{ resume.personalInfo.name }}</h1>
@@ -36,7 +36,7 @@
     </header>
 
     <!-- 个人总结 -->
-    <section v-if="resume.summary" class="resume-section">
+    <section v-if="resume.summary" class="resume-section" :style="sectionStyle('summary')">
       <div class="section-icon">
         <i class="fas fa-user"></i>
       </div>
@@ -45,7 +45,7 @@
     </section>
 
     <!-- 教育经历 -->
-    <section v-if="resume.education.length" class="resume-section">
+    <section v-if="resume.education.length" class="resume-section" :style="sectionStyle('education')">
       <div class="section-icon">
         <i class="fas fa-graduation-cap"></i>
       </div>
@@ -63,7 +63,7 @@
     </section>
 
     <!-- 工作经历 -->
-    <section v-if="resume.workExperience.length" class="resume-section">
+    <section v-if="resume.workExperience.length" class="resume-section" :style="sectionStyle('workExperience')">
       <div class="section-icon">
         <i class="fas fa-briefcase"></i>
       </div>
@@ -82,7 +82,7 @@
     </section>
 
     <!-- 项目经历 -->
-    <section v-if="resume.projects.length" class="resume-section">
+    <section v-if="resume.projects.length" class="resume-section" :style="sectionStyle('projects')">
       <div class="section-icon">
         <i class="fas fa-project-diagram"></i>
       </div>
@@ -105,7 +105,7 @@
     </section>
 
     <!-- 技能特长 -->
-    <section v-if="resume.skills.length" class="resume-section">
+    <section v-if="resume.skills.length" class="resume-section" :style="sectionStyle('skills')">
       <div class="section-icon">
         <i class="fas fa-tools"></i>
       </div>
@@ -118,7 +118,7 @@
     </section>
 
     <!-- 荣誉奖项 -->
-    <section v-if="resume.honors.length" class="resume-section">
+    <section v-if="resume.honors.length" class="resume-section" :style="sectionStyle('honors')">
       <div class="section-icon">
         <i class="fas fa-award"></i>
       </div>
@@ -138,6 +138,8 @@ import { useResumeStore } from '../../store/useResumeStore';
 import { computed, watch, onMounted } from 'vue';
 import type { ColorShades } from '../../types/color';
 import { marked } from 'marked';
+import { normalizeSectionOrder } from '../../constants/sectionOrder';
+import type { SectionKey } from '../../types/resume';
 
 // 接受父组件的主题色
 const props = defineProps<{
@@ -160,6 +162,16 @@ const colorShadesStyle = computed(() => ({
   '--padding-left-right': `${resume.value.resumeSetting.padding_left_right}px`,
   '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
 }));
+
+const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
+
+const sectionStyle = (key: SectionKey, offset = 0) => {
+  const index = sectionOrder.value.indexOf(key);
+  const base = index === -1 ? sectionOrder.value.length : index;
+  return {
+    order: base + offset,
+  };
+};
 
 // 组件挂载时设置字体大小
 onMounted(() => {
@@ -197,6 +209,8 @@ watch(
   box-sizing: border-box;
   font-size: 1rem;
   /* 使用相对单位，基于根元素字体大小 */
+  display: flex;
+  flex-direction: column;
 }
 
 /* 移除所有动画效果和设置盒模型 */
@@ -271,6 +285,8 @@ li {
     box-shadow: none;
     min-height: 297mm;
     font-size: 1rem;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -515,6 +531,8 @@ li {
 @media (max-width: 768px) {
   .resume-container {
     padding: 15px;
+    display: flex;
+    flex-direction: column;
   }
 
   .resume-header {

@@ -1,12 +1,13 @@
 // src/store/useResumeStore.ts
 import { defineStore } from 'pinia';
 import { resumeTemplate } from '../data/resumeDataTemplate.ts';
+import { normalizeSectionOrder } from '../constants/sectionOrder';
 import { message } from 'ant-design-vue';
 // 定义类型
 import type {
   Education, Honor, PersonalInfo,
   Project, ResumeState, Skill,
-  WorkExperience, ResumeSetting
+  WorkExperience, ResumeSetting, SectionKey
 } from '../types/resume';
 
 export const useResumeStore = defineStore('resume', {
@@ -30,6 +31,7 @@ export const useResumeStore = defineStore('resume', {
         console.error('解析 localStorage 失败:', e);
       }
     }
+    resumeData.sectionOrder = normalizeSectionOrder(resumeData.sectionOrder);
     // 如果是首次访问，标记并自动填充数据
     if (isFirstVisit) {
       localStorage.setItem('isFirstVisit', 'false');
@@ -37,6 +39,7 @@ export const useResumeStore = defineStore('resume', {
 
     return {
       ...resumeData,
+      sectionOrder: normalizeSectionOrder(resumeData.sectionOrder),
       currentId,
       isFirstVisit, // 添加到state中
     };
@@ -106,6 +109,32 @@ export const useResumeStore = defineStore('resume', {
     saveToLocalStorage() {
       localStorage.setItem('resumeData', JSON.stringify(this.$state));
       localStorage.setItem('currentId', JSON.stringify(this.currentId));
+    },
+
+    setSectionOrder(order: SectionKey[]) {
+      this.sectionOrder = normalizeSectionOrder(order);
+      this.saveToLocalStorage();
+    },
+
+    moveSection(source: SectionKey, target: SectionKey, placement: 'before' | 'after' = 'before') {
+      if (source === target) return;
+      const order = [...this.sectionOrder];
+      const fromIndex = order.indexOf(source);
+      const targetIndex = order.indexOf(target);
+      if (fromIndex === -1 || targetIndex === -1) return;
+      const [item] = order.splice(fromIndex, 1);
+      let insertIndex = targetIndex;
+      if (fromIndex < targetIndex) {
+        insertIndex = targetIndex - 1;
+      }
+      if (placement === 'after') {
+        insertIndex += 1;
+      }
+      if (insertIndex < 0) insertIndex = 0;
+      if (insertIndex > order.length) insertIndex = order.length;
+      order.splice(insertIndex, 0, item);
+      this.sectionOrder = normalizeSectionOrder(order);
+      this.saveToLocalStorage();
     },
 
     // 通用新增方法

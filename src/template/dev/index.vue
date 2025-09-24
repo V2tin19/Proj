@@ -2,7 +2,7 @@
   <!-- 简历容器，使用计算属性绑定所有主题相关的样式变量 -->
   <div class="resume-container" :style="resumeStyle">
     <!-- 个人信息部分 -->
-    <div class="personal-info">
+    <div class="personal-info" :style="sectionStyle('personalInfo')">
       <div class="personal-details">
         <!-- 仅在有值时显示对应的信息行 -->
         <div class="detail-row" v-if="resume.personalInfo.name">
@@ -49,7 +49,7 @@
     </div>
 
     <!-- 各个章节的模板结构相似，都包含标题和内容部分 -->
-    <div class="section education-section" v-if="resume.education.length">
+    <div class="section education-section" v-if="resume.education.length" :style="sectionStyle('education')">
       <div class="section-title">教育经历</div>
       <div class="section-content">
         <div class="item" v-for="edu in resume.education" :key="edu.id">
@@ -59,7 +59,7 @@
       </div>
     </div>
 
-    <div class="section experience-section" v-if="resume.workExperience.length">
+    <div class="section experience-section" v-if="resume.workExperience.length" :style="sectionStyle('workExperience')">
       <div class="section-title">工作经历</div>
       <div class="section-content">
         <div class="item" v-for="work in resume.workExperience" :key="work.id">
@@ -70,14 +70,14 @@
       </div>
     </div>
 
-    <div class="section skills-section" v-if="resume.skills.length">
+    <div class="section skills-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
       <div class="section-title">技能特长</div>
       <div class="skills-list">
         <p v-for="skill in resume.skills" :key="skill.id" class="skill-item" v-html="marked(skill.skillName)"></p>
       </div>
     </div>
 
-    <div class="section projects-section" v-if="resume.projects.length">
+    <div class="section projects-section" v-if="resume.projects.length" :style="sectionStyle('projects')">
       <div class="section-title">项目经验</div>
       <div class="section-content">
         <div class="item" v-for="project in resume.projects" :key="project.id">
@@ -93,7 +93,7 @@
       </div>
     </div>
 
-    <div class="section honors-section" v-if="resume.honors.length">
+    <div class="section honors-section" v-if="resume.honors.length" :style="sectionStyle('honors')">
       <div class="section-title">荣誉奖项</div>
       <div class="section-content">
         <p v-for="honor in resume.honors" :key="honor.id" class="honor-item">
@@ -103,7 +103,7 @@
       </div>
     </div>
 
-    <div class="section summary-section" v-if="resume.summary">
+    <div class="section summary-section" v-if="resume.summary" :style="sectionStyle('summary')">
       <div class="section-title">自我评价</div>
       <p class="summary" v-html="marked(resume.summary)"></p>
     </div>
@@ -115,6 +115,8 @@ import { useResumeStore } from '../../store/useResumeStore';
 import { computed, watch, onMounted } from 'vue';
 import type { ColorShades } from '../../types/color';
 import { marked } from 'marked';
+import { normalizeSectionOrder } from '../../constants/sectionOrder';
+import type { SectionKey } from '../../types/resume';
 
 // 接受父组件传递的主题色
 const props = defineProps<{
@@ -140,6 +142,15 @@ const resumeStyle = computed(() => ({
   '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
 }));
 
+const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
+
+const sectionStyle = (key: SectionKey, offset = 0) => {
+  const index = sectionOrder.value.indexOf(key);
+  const base = index === -1 ? sectionOrder.value.length : index;
+  return {
+    order: base + offset,
+  };
+};
 // 组件挂载时设置字体大小
 onMounted(() => {
   updateFontSize();
@@ -172,6 +183,8 @@ watch(
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   font-size: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 移除所有动画效果 */
@@ -289,6 +302,8 @@ watch(
     margin: 0;
     padding: var(--padding-top-bottom) var(--padding-left-right);
     box-shadow: none;
+    display: flex;
+    flex-direction: column;
   }
 }
 </style>
