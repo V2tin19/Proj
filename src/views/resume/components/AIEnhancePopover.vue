@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineProps, computed, ref } from "vue";
 import { sendToQwenAIDialogue } from "../../../api/qwenAPI";
-import { useResumeStore } from '../../../store';
+import { useResumeStore } from "../../../store";
 import type { AIDialogue, DialogueHistory } from "../../../types/aiDialogue";
 import { defineEmits } from "vue";
 
@@ -19,6 +19,9 @@ const emit = defineEmits<{
 const AIReply = ref("");
 const loading = ref(false);
 const AIextent = ref(false);
+const canApply = computed(() => {
+  return !!AIReply.value && AIReply.value.trim().length > 0;
+});
 
 const showTitle = computed(() => {
   if (!props.description || props.description.length < 5) {
@@ -29,8 +32,7 @@ const showTitle = computed(() => {
 
 // 构建 AI 提示语
 const buildPrompt = (text: string) => {
-  return `我现在求职的是${personalInfo.value.applicationPosition}岗位，
-  ${text}`;
+  return `我现在求职的 ${personalInfo.value.applicationPosition} 岗位。\n${text}`;
 };
 
 // 发送给 AI 处理
@@ -39,8 +41,8 @@ const handleAiEnhance = async (Prompt: string, isExtend: boolean) => {
   let message: AIDialogue = {
     role: "user",
     content: buildPrompt(Prompt)
-  }
-  let messages: DialogueHistory = [message]
+  };
+  let messages: DialogueHistory = [message];
   AIextent.value = isExtend;
   loading.value = true;
   AIReply.value = "";
@@ -61,20 +63,19 @@ const handleAiEnhance = async (Prompt: string, isExtend: boolean) => {
   }
 };
 const handleApply = () => {
-  if (AIReply.value) {
-    emit('update', AIReply.value);
+  const content = AIReply.value.trim();
+  if (content) {
+    emit('update', content);
   }
 };
 </script>
 
 <template>
-
-
   <a-popover :title="showTitle" trigger="click" placement="right" arrowPointAtCenter="true">
     <template #content v-if="description && description.length > 4">
       <div class="ai-controls">
-        <a-button type="primary" @click="handleAiEnhance(description, false)" :loading="loading &&
-          !AIextent" :disabled="loading && AIextent">
+        <a-button type="primary" @click="handleAiEnhance(description, false)" :loading="loading && !AIextent"
+          :disabled="loading && AIextent">
           AI 润色
         </a-button>
         <a-button type="primary" @click="extend && handleAiEnhance(extend, true)" :loading="loading && AIextent"
@@ -83,13 +84,10 @@ const handleApply = () => {
 
       <div class="ai-content">
         <a-spin :spinning="loading">
-          <div v-if="AIReply" class="ai-reply">
-            {{ AIReply }}
-            <div class="apply-button" v-if="!AIextent">
-              <a-button type="link" size="small" @click="handleApply">
-                <template #icon>
-                  <check-outlined />
-                </template>
+          <div v-if="AIReply" class="ai-editor">
+            <a-textarea v-model:value="AIReply" :auto-size="{ minRows: 4, maxRows: 10 }" :disabled="loading" />
+            <div v-if="!AIextent" class="apply-actions">
+              <a-button type="link" size="small" @click="handleApply" :disabled="!canApply || loading">
                 应用
               </a-button>
             </div>
@@ -99,8 +97,6 @@ const handleApply = () => {
     </template>
     <slot />
   </a-popover>
-
-
 </template>
 
 <style scoped>
@@ -115,25 +111,14 @@ const handleApply = () => {
   max-width: 500px;
 }
 
-.ai-reply {
-  position: relative;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  line-height: 1.6;
-  font-size: 14px;
-  padding: 12px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  max-height: 400px;
-  overflow-y: auto;
+.ai-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.apply-button {
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 4px;
-  padding: 2px;
+.apply-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
