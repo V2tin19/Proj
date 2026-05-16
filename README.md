@@ -162,3 +162,166 @@
 - 合并与流程：采用组长集中合并到 main 的传统模式；每次推送前在团队群/看板说明改动范围与风险点。
 - 自主权与协作：鼓励大家主动提出改进、互相支援与领取额外任务；但重要改动（接口变更、数据库迁移、模板更改）必须提前通报并获得同意。
 - 反馈与确认：请各位在 24 小时内确认本分配或提出调整意见，确认后我会把此公告贴到仓库说明并生成对应的 Issue（如需我代为创建 Issue，请回复“创建 Issue”）。
+
+---
+
+## 6. 从 0 到跑起来（Docker 超细步骤清单）
+
+> 目标：让任何成员在新机器上，用最少步骤把项目容器跑起来，并知道常用命令和排错顺序。
+
+### 6.1 安装 Docker（按系统）
+
+#### Windows 11
+
+1. 安装 Docker Desktop（官网安装包）。
+2. 安装过程中启用 WSL2（若提示）。
+3. 安装完成后重启电脑（建议）。
+4. 启动 Docker Desktop，状态显示 `Running` 再继续。
+
+#### Ubuntu
+
+1. 安装 Docker Engine 与 Compose 插件（`docker compose`）。
+2. 启动并检查 Docker 服务：
+
+```bash
+sudo systemctl status docker
+```
+
+3. 如未运行，启动服务后重试：
+
+```bash
+sudo systemctl start docker
+```
+
+### 6.2 安装后验证（必须通过）
+
+```bash
+docker --version
+docker compose version
+```
+
+若命令报错，先不要继续，先修复 Docker 安装/服务状态。
+
+### 6.3 进入项目并准备配置
+
+1. 进入项目根目录（必须包含 `docker-compose.yml`）。
+2. 准备环境变量：
+   - 若有 `.env.example`，复制为 `.env`。
+   - 补齐数据库、端口、API Key 等必填项。
+3. 检查关键文件是否存在：
+   - `Dockerfile`
+   - `docker-compose.yml`
+   - `requirements.txt` 或 `package.json`（按项目实际）
+
+### 6.4 第一次构建并启动
+
+```bash
+docker compose up -d --build
+```
+
+说明：
+
+- `--build`：强制先构建镜像；
+- `-d`：后台运行容器；
+- 首次运行较慢（拉镜像 + 装依赖）。
+
+### 6.5 启动后健康检查
+
+```bash
+docker compose ps
+docker compose logs -f
+```
+
+单服务排查（以 API 为例）：
+
+```bash
+docker compose logs -f api
+```
+
+再访问服务地址（示例）：
+
+- `http://localhost:8000/docs`
+
+### 6.6 高频命令速查
+
+```bash
+# 启动所有服务
+docker compose up -d
+
+# 停止服务（保留容器）
+docker compose stop
+
+# 停止并删除容器/网络
+docker compose down
+
+# 停止并删除容器/网络/卷（会清掉数据库数据）
+docker compose down -v
+
+# 重建并启动单个服务
+docker compose up -d --build api
+
+# 进入容器
+docker compose exec api sh
+
+# 查看镜像/容器
+docker images
+docker ps -a
+
+# 清理无用资源
+docker system prune
+```
+
+### 6.7 开发阶段建议
+
+- 代码改了但没热更新：重建对应服务（如 `api`）。
+- `.env` 变更后：重启相关容器。
+- 需要保留本地数据时，不要直接执行 `docker compose down -v`。
+- 所有密钥只放 `.env`，严禁写入代码或提交到仓库。
+
+### 6.8 排错顺序（按这 5 步走）
+
+1. **先看容器状态**
+
+```bash
+docker compose ps
+```
+
+确认是否有服务 `Exit`。
+
+2. **再看失败日志**
+
+```bash
+docker compose logs --tail=200 api
+```
+
+3. **对照常见错误定位**
+
+- 端口冲突：`address already in use` → 修改端口映射。
+- 环境变量缺失：`KeyError` / `None` → 检查 `.env` 变量名和值。
+- 数据库连不上：确认 `DB_HOST` 为服务名（如 `db`），不是 `localhost`。
+- 启动顺序问题：应用先起、数据库未就绪 → 增加等待或重试。
+- 权限问题（Linux）：当前用户无 Docker 权限或文件权限不足。
+- 镜像拉取失败：网络问题，重试或切换镜像源。
+
+4. **进入容器内复查环境**
+
+```bash
+docker compose exec api sh
+```
+
+检查环境变量、网络连通、依赖是否完整。
+
+5. **必要时干净重建**
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### 6.9 最短可执行路径（新成员直接照做）
+
+1. 安装 Docker 并通过版本验证。
+2. 进入项目目录并准备 `.env`。
+3. 执行 `docker compose up -d --build`。
+4. 执行 `docker compose ps` 与 `docker compose logs -f` 确认服务正常。
+5. 访问 `http://localhost:<映射端口>` 验证页面/API。
