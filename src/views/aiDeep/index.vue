@@ -84,11 +84,12 @@ provide("beginTour", beginTour);
 
 <style scoped>
 .main-box {
-  border-radius: 20px;
-
-  background-color: var(--bg-card-color);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
   margin: 30px auto;
-  box-shadow: 0 2px 17px 0 rgba(53, 53, 53, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
+  border: 1px solid var(--border-color);
   padding: 5px;
   display: flex;
   max-width: 80vw;
@@ -98,6 +99,7 @@ provide("beginTour", beginTour);
 .left {
   flex: 1;
   padding: 10px;
+  border-right: 1px solid var(--border-color);
 }
 
 .right {

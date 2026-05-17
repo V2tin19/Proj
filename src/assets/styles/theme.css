@@ -1,52 +1,139 @@
-/* 引入字体文件 */
 @font-face {
   font-family: 'zql';
-  src: url('@/assets/fonts/zql.woff2') format('woff2')
+  src: url('@/assets/fonts/zql.woff2') format('woff2');
 }
 
 :root {
-  /* 基础颜色 */
-  --bg-color: #F3F0FE;
-  --bg-card-color: #ffffff;
-  --text-color: #000000;
-  --text-color2: #ffffff;
-  --primary-color: #672DEA;
-  --primary-color-hover: #581FD2;
-  --primary-color-active: #4A1BB0;
-  --card-color: white;
+  color-scheme: dark;
+  --bg-color: #070b12;
+  --bg-card-color: #101722;
+  --bg-elevated: #161f2d;
+  --text-color: #f3f5f8;
+  --text-color2: #070b12;
+  --text-muted: #9aa7bd;
+  --primary-color: #2d5bff;
+  --primary-color-hover: #4a72ff;
+  --primary-color-active: #1d46d6;
+  --card-color: rgba(16, 23, 34, 0.92);
+  --border-color: rgba(133, 152, 182, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.35);
 
-  /* 色阶 */
-  --color-1: #1A0740;
-  /* 最深，用于标题、文本强调 */
-  --color-2: #310A72;
-  /* 深色背景、边框 */
-  --color-3: #4A1BBC;
-  /* 主要按钮、链接 */
-  --color-4: #5E21E0;
-  /* 较亮的按钮、悬浮效果 */
-  --color-5: #713af4;
-  /* 次级按钮、图标 */
-  --color-6: #9c87fe;
-  /* 较亮文本、次级背景 */
-  --color-7: #d3cfff;
-  /* 最亮，用于背景高亮、阴影 */
+  --color-1: #05080e;
+  --color-2: #0f1724;
+  --color-3: #1a2433;
+  --color-4: #223149;
+  --color-5: #2f4468;
+  --color-6: #6d83a7;
+  --color-7: #cfd8e8;
 
-  /* 聊天界面变量 */
-  --chat-bg: #f7f7f9;
-  --chat-user-bubble: var(--color-4);
-  --chat-ai-bubble: var(--bg-card-color);
-  --chat-bubble-shadow: rgba(0, 0, 0, 0.05);
-  --chat-input-bg: var(--bg-card-color);
-  --chat-border: #e8e8e8;
+  --chat-bg: #0a111b;
+  --chat-user-bubble: #183a8c;
+  --chat-ai-bubble: #101722;
+  --chat-bubble-shadow: rgba(0, 0, 0, 0.18);
+  --chat-input-bg: #0f1724;
+  --chat-border: rgba(133, 152, 182, 0.22);
   --chat-input-text: var(--text-color);
-  --chat-placeholder: #999999;
+  --chat-placeholder: #6d7c92;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
 }
 
 body {
-  transition: background-color 0.3s, color 0.3s;
-  background-color: var(--bg-color);
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(45, 91, 255, 0.16), transparent 30%),
+    linear-gradient(180deg, #0b1220 0%, #070b12 58%, #05080e 100%);
   color: var(--text-color);
   font-family: 'zql';
-  transition: all 0.3s;
-  box-sizing: border-box;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+a {
+  color: #86a7ff;
+}
+
+::selection {
+  background: rgba(74, 114, 255, 0.28);
+}
+
+.ant-typography,
+.ant-form,
+.ant-collapse,
+.ant-modal,
+.ant-result,
+.ant-empty,
+.ant-tag,
+.ant-alert {
+  color: var(--text-color);
+}
+
+.ant-card,
+.ant-collapse,
+.ant-collapse > .ant-collapse-item,
+.ant-modal-content,
+.ant-popover-inner,
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-dropdown-menu {
+  background: var(--bg-card-color);
+  border-color: var(--border-color);
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker,
+.ant-input-number,
+.ant-input-number-input,
+.ant-input-group-addon,
+.ant-collapse-content,
+.ant-collapse-content-box,
+.ant-modal-header {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+.ant-input::placeholder,
+.ant-select-selection-placeholder,
+.ant-picker-input input::placeholder,
+.ant-input-number-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.ant-collapse > .ant-collapse-item > .ant-collapse-header,
+.ant-collapse .ant-collapse-header-text,
+.ant-collapse .ant-collapse-expand-icon {
+  color: var(--text-color) !important;
+}
+
+.ant-btn-default,
+.ant-btn-dashed,
+.ant-btn-text {
+  background: var(--bg-elevated);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.ant-btn-default:hover,
+.ant-btn-dashed:hover,
+.ant-btn-text:hover {
+  color: var(--text-color);
+  border-color: rgba(74, 114, 255, 0.5);
+  background: #172235;
+}
+
+.ant-alert {
+  background: rgba(24, 35, 54, 0.92);
+  border: 1px solid var(--border-color);
 }

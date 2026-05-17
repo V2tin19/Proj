@@ -60,10 +60,12 @@ const settingsStore = useSettingsStore();
 .settings-card {
   width: 100%;
   max-width: 600px;
-  background: var(--card-color);
+  background:
+    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  border: 1px solid var(--border-color);
   color: var(--text-color);
 }
 
@@ -91,12 +93,13 @@ label {
 
 .tips {
   font-size: 13px;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   padding: 10px;
   border-radius: 8px;
-  color: var(--text-color-secondary);
+  color: var(--text-muted);
   line-height: 1.5;
   text-align: justify;
+  border: 1px solid var(--border-color);
 }
 
 .tips a {

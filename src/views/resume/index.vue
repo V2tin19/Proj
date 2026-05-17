@@ -1,12 +1,13 @@
-<!-- 父组件代码 -->
 <template>
   <div class="resume">
-
-    <!-- 左侧简历内容编辑组件 -->
     <div class="left">
       <div class="btn-group">
-        <!-- 预览填充 -->
-        <a-popconfirm title="填充会覆盖当前数据，确定吗？" ok-text="确定" cancel-text="取消" @confirm="resumeStore.autoFillData">
+        <a-popconfirm
+          title="填充会覆盖当前数据，确定吗？"
+          ok-text="确定"
+          cancel-text="取消"
+          @confirm="resumeStore.autoFillData"
+        >
           <template #icon><question-circle-outlined style="color: red" /></template>
           <a-button type="primary" ghost>
             <eye-outlined />
@@ -14,8 +15,12 @@
           </a-button>
         </a-popconfirm>
 
-        <!-- 清空数据 -->
-        <a-popconfirm title="确定要清空当前简历数据吗？" ok-text="清空" cancel-text="取消" @confirm="resumeStore.clearData">
+        <a-popconfirm
+          title="确定要清空当前简历数据吗？"
+          ok-text="清空"
+          cancel-text="取消"
+          @confirm="resumeStore.clearData"
+        >
           <template #icon><warning-outlined style="color: red" /></template>
           <a-button danger>
             <delete-outlined />
@@ -23,15 +28,17 @@
           </a-button>
         </a-popconfirm>
 
-        <!-- 导出数据 -->
         <a-button type="default" @click="resumeStore.exportData">
           <download-outlined />
           导出JSON
         </a-button>
 
-        <!-- 导入按钮 -->
-        <a-upload v-model:fileList="fileList" :beforeUpload="handleFileUpload" :showUploadList="false"
-          accept="application/json">
+        <a-upload
+          v-model:fileList="fileList"
+          :beforeUpload="handleFileUpload"
+          :showUploadList="false"
+          accept="application/json"
+        >
           <a-button type="dashed">
             <upload-outlined />
             导入JSON
@@ -40,15 +47,8 @@
       </div>
 
       <resumeEdit />
-      <!-- 底部展示github图标 -->
-      <div class="github-link">
-        <a href="https://github.com/weidong-repo/AIResume" target="_blank">
-          <span class="github-star">如果您喜欢这个项目，请给个 Star 吧！</span>
-          <img src="https://img.shields.io/github/stars/weidong-repo/AIResume?style=social" alt="GitHub stars">
-        </a>
-      </div>
     </div>
-    <!-- 右侧简历展示组件 -->
+
     <div class="right">
       <resumePreview />
     </div>
@@ -56,24 +56,23 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { message } from "ant-design-vue";
+import type { UploadProps } from "ant-design-vue";
 import resumeEdit from './components/resumeEdit.vue';
 import resumePreview from './components/resumePreview.vue';
 import { useResumeStore } from "../../store/useResumeStore";
-import { UploadOutlined } from '@ant-design/icons-vue';
-import { message } from "ant-design-vue";
-import type { UploadProps } from "ant-design-vue";
-import { ref } from 'vue';
+
 const resumeStore = useResumeStore();
 const fileList = ref<UploadProps["fileList"]>([]);
 
-// 处理文件上传
 const handleFileUpload = (file: File) => {
   if (file.type !== "application/json") {
     message.error("请上传 JSON 文件！");
     return false;
   }
+
   resumeStore.importData(file);
-  // 清空 fileList，避免重复上传不触发事件
   fileList.value = [];
   return false;
 };
@@ -90,12 +89,13 @@ const handleFileUpload = (file: File) => {
 .left {
   width: 38%;
   height: 100%;
-  background-color: var(--bg-color);
+  background:
+    linear-gradient(180deg, rgba(7, 11, 18, 0.98), rgba(10, 17, 27, 0.98));
+  border-right: 1px solid var(--border-color);
   transition: all 0.3s;
   min-width: 520px;
   display: flex;
   flex-direction: column;
-  /* 改为纵向布局 */
 }
 
 .right {
@@ -103,6 +103,7 @@ const handleFileUpload = (file: File) => {
   height: 100%;
   position: relative;
   overflow-y: auto;
+  background: var(--bg-color);
 }
 
 .btn-group {
@@ -111,33 +112,14 @@ const handleFileUpload = (file: File) => {
   justify-content: center;
   gap: 20px;
   align-items: center;
-  background-color: var(--bg-color);
+  background: rgba(7, 11, 18, 0.86);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(16px);
   flex-shrink: 0;
-  /* 防止按钮组被压缩 */
 }
 
-/* 让编辑区域占满剩余空间并添加滚动 */
 :deep(.resume-edit) {
   flex: 1;
   overflow-y: auto;
-}
-
-.github-link {
-  margin-top: 5px;
-  text-align: center;
-}
-
-.github-link a {
-  text-decoration: none;
-}
-
-.github-star {
-  margin-right: 5px;
-  color: var(--text-color);
-  font-size: 12px;
-  /* 去除a标签默认样式 */
-
-  cursor: pointer;
-
 }
 </style>

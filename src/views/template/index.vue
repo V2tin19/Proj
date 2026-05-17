@@ -129,26 +129,30 @@ const getTemplateImage = (template: Template): string => {
 }
 
 .template-card {
-  border-radius: 12px;
+  border-radius: 18px;
   transition: all 0.3s ease;
   height: 100%;
-  background: #fff;
+  background:
+    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.96));
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.24);
 }
 
 .template-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
 }
 
 .selected-template {
-  border: 2px solid #52c41a;
+  border: 1px solid rgba(59, 108, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(59, 108, 255, 0.3), 0 24px 48px rgba(0, 0, 0, 0.32);
 }
 
 .selected-badge {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: #52c41a;
+  background: var(--primary-color);
   border-radius: 50%;
   padding: 2px;
   z-index: 1;
@@ -177,7 +181,7 @@ const getTemplateImage = (template: Template): string => {
   /* A4 比例 */
   overflow: hidden;
   border-radius: 8px;
-  background: #fafafa;
+  background: #0d1420;
 }
 
 .template-image {
@@ -198,11 +202,11 @@ const getTemplateImage = (template: Template): string => {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 4px;
-  color: #262626;
+  color: var(--text-color);
 }
 
 .template-description {
-  color: #8c8c8c;
+  color: var(--text-muted);
   font-size: 12px;
   line-height: 1.5;
   margin: 4px 0 8px;
@@ -214,9 +218,9 @@ const getTemplateImage = (template: Template): string => {
 }
 
 .selected-button {
-  background-color: #f6ffed !important;
-  border: 1px solid #52c41a !important;
-  color: #52c41a !important;
+  background-color: rgba(59, 108, 255, 0.14) !important;
+  border: 1px solid rgba(59, 108, 255, 0.5) !important;
+  color: #9ab4ff !important;
 }
 
 /* 响应式设计优化 */

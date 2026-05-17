@@ -1,11 +1,5 @@
 <template>
   <div class="resume-edit">
-    <a-alert
-      message="现已经支持部分区域渲染markdown或HTML语法（如技能、项目等）"
-      show-icon
-      type="info"
-      style="margin-bottom: 10px;"
-    />
     <div
       v-for="module in orderedModules"
       :key="module.key"
@@ -28,6 +22,7 @@
       </button>
       <component :is="module.component" />
     </div>
+
     <div
       v-show="draggingModule"
       class="module-drop-zone"
@@ -36,7 +31,7 @@
       @drop="onDropToEnd"
     >
       <MenuOutlined />
-      <span>拖拽到此处将模块放在最后</span>
+      <span>拖到这里可将模块放到最后</span>
     </div>
   </div>
 </template>
@@ -90,7 +85,9 @@ const onModuleDragStart = (key: SectionKey, event: DragEvent) => {
   draggingModule.value = key;
   dragOverModule.value = null;
   event.dataTransfer?.setData('text/plain', key);
-  event.dataTransfer && (event.dataTransfer.effectAllowed = 'move');
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+  }
 };
 
 const onModuleDragEnd = () => {
@@ -111,7 +108,9 @@ const onModuleDragLeave = (key: SectionKey) => {
 
 const onModuleDragOver = (key: SectionKey, event: DragEvent) => {
   if (!draggingModule.value) return;
-  event.dataTransfer && (event.dataTransfer.dropEffect = 'move');
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
   if (dragOverModule.value !== key && draggingModule.value !== key) {
     dragOverModule.value = key;
   }
@@ -120,14 +119,17 @@ const onModuleDragOver = (key: SectionKey, event: DragEvent) => {
 const onModuleDrop = (key: SectionKey, event: DragEvent) => {
   event.preventDefault();
   if (!draggingModule.value) return;
+
   const currentTarget = event.currentTarget as HTMLElement | null;
   let placement: 'before' | 'after' = 'before';
+
   if (currentTarget) {
     const rect = currentTarget.getBoundingClientRect();
     if (event.clientY - rect.top > rect.height / 2) {
       placement = 'after';
     }
   }
+
   resumeStore.moveSection(draggingModule.value, key, placement);
   draggingModule.value = null;
   dragOverModule.value = null;
@@ -136,9 +138,11 @@ const onModuleDrop = (key: SectionKey, event: DragEvent) => {
 const onDropToEnd = (event: DragEvent) => {
   event.preventDefault();
   if (!draggingModule.value) return;
+
   const nextOrder = resumeStore.sectionOrder.filter(item => item !== draggingModule.value);
   nextOrder.push(draggingModule.value);
   resumeStore.setSectionOrder(nextOrder);
+
   draggingModule.value = null;
   dragOverModule.value = null;
 };
@@ -149,7 +153,6 @@ const onDropToEnd = (event: DragEvent) => {
   padding: 12px;
   height: 100vh;
   overflow-y: auto;
-  /* 滚动条细 */
   scrollbar-width: thin;
 }
 
@@ -158,10 +161,13 @@ const onDropToEnd = (event: DragEvent) => {
   padding-left: 28px;
   margin-bottom: 16px;
   border-radius: 10px;
+  background: rgba(16, 23, 34, 0.68);
+  border: 1px solid transparent;
 }
 
 .module-wrapper.is-drag-over {
-  outline: 2px dashed #1677ff;
+  outline: 2px dashed var(--primary-color);
+  border-color: rgba(59, 108, 255, 0.32);
 }
 
 .module-drag-handle {
@@ -176,7 +182,7 @@ const onDropToEnd = (event: DragEvent) => {
   cursor: grab;
   border: none;
   background: transparent;
-  color: #8c8c8c;
+  color: var(--text-muted);
   padding: 0;
 }
 
@@ -187,15 +193,15 @@ const onDropToEnd = (event: DragEvent) => {
 .module-drop-zone {
   margin-top: 12px;
   padding: 12px;
-  border: 1px dashed #c0c4cc;
+  border: 1px dashed var(--border-color);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #8c8c8c;
+  color: var(--text-muted);
   font-size: 12px;
-  background: #f7f7f7;
+  background: rgba(16, 23, 34, 0.68);
 }
 
 .module-drop-zone svg {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Header from "./components/Header/index.vue";
-import ThemeSwitcher from './components/ThemeSwitcher/index.vue';
 import NarrowScreen from './components/narrow/index.vue';
 import { useResumeStore } from './store/useResumeStore';
 import { useSettingsStore } from './store/useSettingsStore';
@@ -42,7 +41,6 @@ onMounted(async () => {
         </keep-alive>
       </router-view>
     </a-config-provider>
-    <ThemeSwitcher />
   </template>
 </template>
 
