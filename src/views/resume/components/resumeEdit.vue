@@ -161,8 +161,9 @@ const onDropToEnd = (event: DragEvent) => {
   padding-left: 28px;
   margin-bottom: 16px;
   border-radius: 10px;
-  background: rgba(16, 23, 34, 0.68);
-  border: 1px solid transparent;
+  background: var(--panel-surface);
+  border: 1px solid rgba(80, 100, 140, 0.18);
+  box-shadow: none;
 }
 
 .module-wrapper.is-drag-over {
@@ -193,7 +194,7 @@ const onDropToEnd = (event: DragEvent) => {
 .module-drop-zone {
   margin-top: 12px;
   padding: 12px;
-  border: 1px dashed var(--border-color);
+  border: 1px dashed rgba(80, 100, 140, 0.2);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -201,7 +202,7 @@ const onDropToEnd = (event: DragEvent) => {
   gap: 8px;
   color: var(--text-muted);
   font-size: 12px;
-  background: rgba(16, 23, 34, 0.68);
+  background: var(--panel-surface);
 }
 
 .module-drop-zone svg {

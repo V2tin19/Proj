@@ -15,6 +15,12 @@
           </router-link>
         </li>
         <li>
+          <router-link to="/agent">
+            <SvgIcon iconName="example" />
+            简历智能体
+          </router-link>
+        </li>
+        <li>
           <router-link to="/aiDeep">
             <SvgIcon iconName="ai" />
             AI深度交流
@@ -44,8 +50,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import type { TourProps } from 'ant-design-vue';
-import SvgIcon from '../SvgIcon.vue';
+import type { TourProps } from "ant-design-vue";
+import SvgIcon from "../SvgIcon.vue";
 import { useResumeStore } from "../../store/useResumeStore";
 
 const store = useResumeStore();
@@ -53,15 +59,15 @@ const setting = ref(null);
 const templateStore = ref(null);
 const tourOpen = ref(false);
 
-const tourSteps: TourProps['steps'] = [
+const tourSteps: TourProps["steps"] = [
   {
     title: "网站配置",
-    description: "请先进入网站配置，完善基础信息，否则无法正常使用 AI 功能。",
+    description: "请先进入网站配置，补充模型接口等基础信息，否则 AI 能力无法稳定使用。",
     target: () => setting.value,
   },
   {
     title: "选择模板",
-    description: "然后进入模板市场，挑选适合你的简历模板。",
+    description: "然后进入模板市场，挑选适合自己的简历模板。",
     target: () => templateStore.value,
   }
 ];

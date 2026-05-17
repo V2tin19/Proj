@@ -9,6 +9,19 @@ import type {
   Project, ResumeState, Skill,
   WorkExperience, ResumeSetting, SectionKey
 } from '../types/resume';
+import type { GeneratedResumeData } from '../types/agent';
+
+function nextIdFromGeneratedResume(resumeData: GeneratedResumeData) {
+  const allIds = [
+    ...resumeData.education.map(item => item.id),
+    ...resumeData.workExperience.map(item => item.id),
+    ...resumeData.skills.map(item => item.id),
+    ...resumeData.projects.map(item => item.id),
+    ...resumeData.honors.map(item => item.id)
+  ].filter((id) => typeof id === 'number' && !Number.isNaN(id));
+
+  return allIds.length > 0 ? Math.max(...allIds) + 1 : 1;
+}
 
 export const useResumeStore = defineStore('resume', {
   state: (): ResumeState => {
@@ -177,6 +190,20 @@ export const useResumeStore = defineStore('resume', {
     updateSummary(updatedSummary: string) {
       this.summary = updatedSummary;
       this.saveToLocalStorage();
+    },
+
+    applyGeneratedResume(generated: GeneratedResumeData) {
+      this.personalInfo = generated.personalInfo;
+      this.education = generated.education;
+      this.workExperience = generated.workExperience;
+      this.skills = generated.skills;
+      this.projects = generated.projects;
+      this.honors = generated.honors;
+      this.summary = generated.summary;
+      this.currentId = nextIdFromGeneratedResume(generated);
+      this.sectionOrder = normalizeSectionOrder(this.sectionOrder);
+      this.saveToLocalStorage();
+      message.success('已将智能生成结果应用到当前简历');
     },
 
     // 新增教育经历

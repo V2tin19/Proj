@@ -134,7 +134,7 @@ watch(
   margin: 0 auto;
   max-width: 800px;
   font-family: 'zql';
-  background-color: var(--color-7);
+  background-color: var(--panel-surface);
 }
 
 

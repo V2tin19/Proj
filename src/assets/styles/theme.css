@@ -15,7 +15,8 @@
   --primary-color-hover: #4a72ff;
   --primary-color-active: #1d46d6;
   --card-color: rgba(16, 23, 34, 0.92);
-  --border-color: rgba(133, 152, 182, 0.2);
+  --panel-surface: rgba(11, 18, 29, 0.9);
+  --border-color: rgba(133, 152, 182, 0.15);
   --shadow-color: rgba(0, 0, 0, 0.35);
 
   --color-1: #05080e;
@@ -81,12 +82,14 @@ a {
 .ant-collapse,
 .ant-collapse > .ant-collapse-item,
 .ant-modal-content,
+.ant-modal-body,
+.ant-modal-footer,
 .ant-popover-inner,
 .ant-select-dropdown,
 .ant-picker-dropdown,
 .ant-dropdown-menu {
-  background: var(--bg-card-color);
-  border-color: var(--border-color);
+  background: var(--bg-card-color) !important;
+  border-color: var(--border-color) !important;
 }
 
 .ant-input,
@@ -98,7 +101,9 @@ a {
 .ant-input-group-addon,
 .ant-collapse-content,
 .ant-collapse-content-box,
-.ant-modal-header {
+.ant-modal-header,
+.ant-form-item-control-input,
+.ant-form-item-control-input-content {
   background: var(--bg-elevated) !important;
   border-color: var(--border-color) !important;
   color: var(--text-color) !important;
@@ -109,6 +114,61 @@ a {
 .ant-picker-input input::placeholder,
 .ant-input-number-input::placeholder {
   color: var(--text-muted) !important;
+}
+
+.ant-modal-title,
+.ant-form-item-label > label,
+.ant-form-item,
+.ant-select-selection-item,
+.ant-select-item,
+.ant-select-item-option-content,
+.ant-select-arrow,
+.ant-select-clear,
+.ant-slider-mark-text {
+  color: var(--text-color) !important;
+}
+
+.ant-form-item-label > label::after {
+  color: var(--text-muted) !important;
+}
+
+.ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: rgba(60, 80, 120, 0.1) !important;
+}
+
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: rgba(60, 80, 120, 0.18) !important;
+  color: var(--text-color) !important;
+}
+
+.ant-select-item-empty,
+.ant-empty-description {
+  color: var(--text-muted) !important;
+}
+
+.ant-modal-content {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45) !important;
+}
+
+.ant-modal-close {
+  color: var(--text-muted) !important;
+}
+
+.ant-modal-close:hover {
+  color: var(--text-color) !important;
+  background: rgba(60, 80, 120, 0.12) !important;
+}
+
+.ant-slider-rail {
+  background: rgba(80, 100, 140, 0.2) !important;
+}
+
+.ant-slider-track {
+  background: var(--primary-color) !important;
+}
+
+.ant-slider-handle::after {
+  box-shadow: 0 0 0 2px var(--primary-color) !important;
 }
 
 .ant-collapse > .ant-collapse-item > .ant-collapse-header,

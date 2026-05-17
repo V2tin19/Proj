@@ -93,7 +93,7 @@ label {
 
 .tips {
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(60, 80, 120, 0.1);
   padding: 10px;
   border-radius: 8px;
   color: var(--text-muted);

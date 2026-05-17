@@ -35,16 +35,30 @@
 
 /* 美化切换颜色 */
 .changeColor {
-  border: none;
+  border: 1px solid var(--border-color);
   background-color: transparent;
   cursor: pointer;
-  padding: 0;
+  padding: 2px;
   margin: 0 10px;
   width: 30px;
   height: 30px;
   border-radius: 50%;
   outline: none;
   transition: background-color 0.3s;
+}
+
+.changeColor::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.changeColor::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+.changeColor::-moz-color-swatch {
+  border: none;
+  border-radius: 50%;
 }
 
 .resume-content {

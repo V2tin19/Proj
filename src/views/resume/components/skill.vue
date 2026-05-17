@@ -149,7 +149,7 @@ watch(
   margin: 20px auto 0;
   max-width: 800px;
   font-family: 'zql';
-  background-color: var(--color-7);
+  background-color: var(--panel-surface);
 }
 
 .skill-item {

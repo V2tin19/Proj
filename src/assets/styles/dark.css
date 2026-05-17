@@ -10,7 +10,8 @@
   --primary-color-hover: #5b84ff;
   --primary-color-active: #2853dc;
   --card-color: rgba(13, 20, 32, 0.94);
-  --border-color: rgba(148, 163, 184, 0.2);
+  --panel-surface: rgba(9, 15, 24, 0.92);
+  --border-color: rgba(148, 163, 184, 0.15);
   --shadow-color: rgba(0, 0, 0, 0.45);
 
   --color-1: #02050a;
