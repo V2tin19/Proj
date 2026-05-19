@@ -1,0 +1,16 @@
+FROM node:18-alpine AS build
+WORKDIR /app
+
+# 复制 package 文件并安装（构建需要 devDependencies）
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+# 复制全部源并构建
+COPY . .
+RUN npm run build
+
+# 用 nginx 提供静态文件
+FROM nginx:stable-alpine AS runtime
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

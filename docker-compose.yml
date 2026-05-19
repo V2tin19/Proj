@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: proj_server
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+    volumes:
+      # JSON 数据持久化（写入 server/data）
+      - server_data:/app/server/data
+    ports:
+      - "3000:3000"
+    networks:
+      - proj_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: proj_web
+    restart: unless-stopped
+    networks:
+      - proj_net
+    # 注意：web 不直接暴露端口，由 nginx 统一出口
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: proj_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - web
+      - server
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - proj_net
+
+volumes:
+  server_data:
+
+networks:
+  proj_net:
+    driver: bridge
