@@ -1,11 +1,7 @@
 FROM node:18-slim
 WORKDIR /app
 
-# 使用 server/package.json 安装后端依赖（你们已说明无第三方包，可为空）
-COPY server/package*.json ./
-RUN npm ci --production --no-audit --no-fund || true
-
-# 复制后端代码
+# 只复制 server 代码，不安装依赖（后端无第三方包）
 COPY server/ ./server
 WORKDIR /app/server
 

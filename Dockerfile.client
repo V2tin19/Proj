@@ -1,15 +1,18 @@
-FROM node:18-alpine AS build
+FROM node:18-slim AS build
 WORKDIR /app
 
-# 复制 package 文件并安装（构建需要 devDependencies）
-COPY package.json package-lock.json* ./
-RUN npm ci
+ENV NODE_ENV=development
+RUN npm config set registry https://registry.npmjs.org \
+ && npm config set fetch-retries 5 \
+ && npm config set fetch-retry-mintimeout 20000 \
+ && npm config set fetch-retry-maxtimeout 120000
 
-# 复制全部源并构建
+COPY package.json package-lock.json* ./
+RUN npm install --include=dev --no-audit --no-fund
+
 COPY . .
 RUN npm run build
 
-# 用 nginx 提供静态文件
 FROM nginx:stable-alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
