@@ -1,0 +1,32 @@
+{
+  "config": {
+    "chunkSize": 180,
+    "chunkOverlap": 30,
+    "retrievalTopK": 3,
+    "matchAlgorithm": "keyword-overlap",
+    "embeddingProvider": "local-fallback"
+  },
+  "documents": [
+    {
+      "id": "doc-campus-format",
+      "name": "校招简历通用规范",
+      "category": "写作规范",
+      "content": "校招简历建议采用一页结构，优先呈现求职意向、教育经历、项目经历、实践经历、技能与奖项。每段经历尽量写清楚时间、角色、任务、方法和结果，尽量避免空泛形容词。",
+      "createdAt": "2026-05-17T00:00:00.000Z"
+    },
+    {
+      "id": "doc-tech-project",
+      "name": "技术项目描述参考",
+      "category": "技术岗位",
+      "content": "技术类项目经历建议围绕业务场景、技术方案、个人职责、性能优化和最终结果来写。可以适当强调框架选型、组件封装、接口联调、部署上线、性能指标与团队协作。",
+      "createdAt": "2026-05-17T00:00:00.000Z"
+    },
+    {
+      "id": "doc-education-highlight",
+      "name": "教育经历强化建议",
+      "category": "教育经历",
+      "content": "如果学生缺少实习经历，可以在教育经历中补充主修课程、成绩排名、英语能力、实验实践和课程设计。教育经历可以成为校招生简历的重要说服点。",
+      "createdAt": "2026-05-17T00:00:00.000Z"
+    }
+  ]
+}
