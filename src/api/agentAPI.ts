@@ -9,8 +9,26 @@ import type {
 
 const apiClient = axios.create({
   baseURL: "/api",
-  timeout: 60000
+  timeout: 60000,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
+
+// 响应拦截器：统一错误处理
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      console.error("API Error:", error.response.status, error.response.data);
+    } else if (error.request) {
+      console.error("API No Response:", error.request);
+    } else {
+      console.error("API Request Error:", error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export async function getBackendHealth() {
   const response = await apiClient.get("/health");

@@ -183,6 +183,67 @@ const resumeSettingClickOK = () => {
   message.success('设置成功');
 }
 
+/**
+ * 将 CSS 变量内联为实际颜色值，解决 html2canvas 无法正确解析 CSS 变量的问题
+ */
+const inlineCssVariables = (element: HTMLElement) => {
+  const computedStyle = window.getComputedStyle(element);
+  const cssVars = [
+    '--themeColor1',
+    '--themeColor2',
+    '--text-color',
+    '--background-color',
+    '--color-base',
+    '--color-light',
+    '--color-lighter',
+    '--color-dark',
+    '--color-darker',
+  ];
+
+  // 遍历所有子孙元素，将 CSS 变量替换为计算后的实际值
+  const allElements = element.querySelectorAll('*');
+  allElements.forEach((el) => {
+    const style = (el as HTMLElement).style;
+    const computed = window.getComputedStyle(el as HTMLElement);
+
+    cssVars.forEach((varName) => {
+      const value = computed.getPropertyValue(varName).trim();
+      if (value && value !== 'initial' && value !== '') {
+        // 根据变量名映射到对应的 CSS 属性
+        if (varName.includes('Color') || varName.includes('color')) {
+          // 检查元素是否使用了该变量作为 color 或 background-color
+          const color = computed.color;
+          const bgColor = computed.backgroundColor;
+          if (style.color && style.color.includes(varName)) {
+            (el as HTMLElement).style.color = color;
+          }
+          if (style.backgroundColor && style.backgroundColor.includes(varName)) {
+            (el as HTMLElement).style.backgroundColor = bgColor;
+          }
+        }
+      }
+    });
+
+    // 强制设置颜色，确保 html2canvas 能正确捕获
+    const currentColor = computed.color;
+    if (currentColor && currentColor !== 'rgba(0, 0, 0, 0)' && currentColor !== 'transparent') {
+      (el as HTMLElement).style.color = currentColor;
+    }
+    const currentBg = computed.backgroundColor;
+    if (currentBg && currentBg !== 'rgba(0, 0, 0, 0)' && currentBg !== 'transparent') {
+      (el as HTMLElement).style.backgroundColor = currentBg;
+    }
+  });
+
+  // 同时处理根元素的 CSS 变量
+  cssVars.forEach((varName) => {
+    const value = computedStyle.getPropertyValue(varName).trim();
+    if (value && value !== 'initial' && value !== '') {
+      element.style.setProperty(varName, value);
+    }
+  });
+};
+
 // 导出简历为 PDF
 const exportToPDF = async () => {
   await nextTick();
@@ -190,10 +251,15 @@ const exportToPDF = async () => {
   const tempContainer = document.createElement("div");
   tempContainer.style.position = "absolute";
   tempContainer.style.top = "-9999px"; // 隐藏容器
+  tempContainer.style.left = "-9999px";
+  // 确保容器有白色背景，避免透明导致颜色变淡
+  tempContainer.style.backgroundColor = "#ffffff";
   document.body.appendChild(tempContainer);
 
   const content = document.createElement("div");
   content.classList.add("resume-content");
+  content.style.backgroundColor = "#ffffff";
+  content.style.color = "#333333";
 
   // 渲染当前模板的内容
   const selectedTemplate = templates.value.find(t => t.id === currentTemplate.value);
@@ -210,11 +276,21 @@ const exportToPDF = async () => {
       app.mount(content);
       tempContainer.appendChild(content);
       await nextTick();
+
+      // 内联 CSS 变量，解决 html2canvas 颜色变淡问题
+      inlineCssVariables(content);
+      await nextTick();
+
       const options = {
         filename: "resume.pdf",
         margin: 0,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };
       html2pdf().from(content).set(options).save().finally(() => {
