@@ -7,16 +7,26 @@
       <p class="tips">
         注意：此处调用接口使用的是 OpenAI 的接口格式
         （换言之，只要你的大模型接口厂商使用的是 OpenAI 格式，你填入都能正常调用接口）
-        <span style="color:red">默认值不会改请不要动！！要是完全不会，就只填apikey就行了，点击链接前往获取key，填入即可</span>
+        <span style="color:red">不会配置就选下面的预设，或只填 API Key 即可</span>
       </p>
+
+      <!-- 平台预设按钮 -->
+      <div class="preset-buttons">
+        <a-button
+          v-for="preset in presets"
+          :key="preset.name"
+          :type="currentPreset === preset.name ? 'primary' : 'default'"
+          @click="applyPreset(preset)"
+        >
+          {{ preset.name }}
+        </a-button>
+      </div>
+
       <div class="input-group">
-        <label for="api-url">大模型名称<span style="color:red">（不懂勿改）</span></label>
-        <a-input id="api-url" v-model:value="settingsStore.modelName" placeholder="请输入模型名称" />
+        <label for="model-name">大模型名称<span style="color:red">（不懂勿改）</span></label>
+        <a-input id="model-name" v-model:value="settingsStore.modelName" placeholder="请输入模型名称" />
         <p class="tips">
-          如果用我的反代地址，请使用阿里的大模型，如果不会配置，请勿修改，默认为"qwen-turbo"
-          <a href="https://bailian.console.aliyun.com/#/model-market" target="_blank">
-            查看阿里百炼模型大全
-          </a>。
+          模型名称示例：qwen-turbo、qwen-plus、deepseek-chat、gpt-3.5-turbo
         </p>
       </div>
 
@@ -24,8 +34,10 @@
         <label for="api-key">API Key（使用大模型）</label>
         <a-input id="api-key" v-model:value="settingsStore.aliApiKey" placeholder="请输入 API Key" />
         <p class="tips">
-          请填写 API Key 用于调用 AI 模型。如果下面使用的是我提供的反代地址，请前往阿里云获取
-          <a href="https://bailian.console.aliyun.com/?apiKey=1#/api-key" target="_blank">阿里云百炼 API Key</a>。
+          请填写 API Key 用于调用 AI 模型。
+          <a href="https://bailian.console.aliyun.com/?apiKey=1#/api-key" target="_blank">阿里云百炼 API Key</a>
+          |
+          <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek API Key</a>
         </p>
       </div>
 
@@ -33,12 +45,9 @@
         <label for="api-url">API URL<span style="color:red">（不懂勿改）</span></label>
         <a-input id="api-url" v-model:value="settingsStore.aliApiUrl" placeholder="请输入 API URL" />
         <p class="tips">
-          请填写 API URL（经过反向代理，解决跨域问题），用于调用 AI 模型。或者直接使用我提供的反代地址：
-          https://resumeai.404.pub/
-          （该地址仅适用于阿里云百炼 API Key）。
-          <a href="https://help.aliyun.com/zh/model-studio/developer-reference/use-qwen-by-calling-api" target="_blank">
-            查看阿里百炼官方文档
-          </a>。
+          必须以 <code>/v1/chat/completions</code> 结尾。常用地址：
+          <br>阿里云：<code>https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions</code>
+          <br>DeepSeek：<code>https://api.deepseek.com/v1/chat/completions</code>
         </p>
       </div>
     </a-card>
@@ -46,8 +55,30 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useSettingsStore } from '../../store/useSettingsStore';
+
 const settingsStore = useSettingsStore();
+const currentPreset = ref('');
+
+const presets = [
+  {
+    name: '阿里云百炼',
+    modelName: 'qwen-turbo',
+    aliApiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+  },
+  {
+    name: 'DeepSeek',
+    modelName: 'deepseek-chat',
+    aliApiUrl: 'https://api.deepseek.com/v1/chat/completions',
+  },
+];
+
+const applyPreset = (preset: typeof presets[0]) => {
+  currentPreset.value = preset.name;
+  settingsStore.modelName = preset.modelName;
+  settingsStore.aliApiUrl = preset.aliApiUrl;
+};
 </script>
 
 <style scoped>
@@ -77,6 +108,13 @@ const settingsStore = useSettingsStore();
   color: var(--primary-color);
 }
 
+.preset-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .input-group {
   display: flex;
   flex-direction: column;
@@ -100,6 +138,13 @@ label {
   line-height: 1.5;
   text-align: justify;
   border: 1px solid var(--border-color);
+}
+
+.tips code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 .tips a {
