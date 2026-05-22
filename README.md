@@ -373,9 +373,70 @@ chcp 65001
 
 ---
 
+## 10. Docker 部署
+
+### 10.1 快速启动
+
+```bash
+# 构建镜像
+docker build -t proj-backend .
+
+# 启动容器（需先创建 .env 文件）
+docker run -d \
+  --name proj_backend \
+  -p 8000:8000 \
+  -v backend_data:/app/data \
+  --env-file .env \
+  proj-backend
+```
+
+### 10.2 环境变量文件 `.env`
+
+```ini
+LLM_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+LLM_API_KEY=sk-你的阿里云百炼Key
+LLM_MODEL=qwen-plus
+```
+
+> `.env` 已加入 `.gitignore`，不会被提交。
+
+### 10.3 验证容器运行
+
+```bash
+# 健康检查
+curl http://localhost:8000/api/health
+
+# 查看日志
+docker logs -f proj_backend
+```
+
+### 10.4 常用命令
+
+| 命令 | 说明 |
+|------|------|
+| `docker stop proj_backend` | 停止容器 |
+| `docker start proj_backend` | 启动容器 |
+| `docker restart proj_backend` | 重启容器 |
+| `docker rm -f proj_backend` | 删除容器 |
+| `docker exec -it proj_backend bash` | 进入容器 |
+
+### 10.5 数据持久化
+
+知识库数据通过 Docker volume `backend_data` 持久化，容器删除后数据不会丢失：
+
+```bash
+# 备份数据
+docker cp proj_backend:/app/data ./backup
+
+# 查看 volume
+docker volume ls
+```
+
+---
+
 ## 开发团队注意
 
-- **前端代码**位于同级 `Proj/` 目录，本仓库不修改前端。
+- **前端代码**位于同级 `frontend/` 目录，本仓库不修改前端。
 - **API 契约**：所有接口均与前端 `src/api/agentAPI.ts` 中定义的接口对齐，修改前请与前端负责人沟通。
 - **密钥安全**：API Key 严禁写入代码，只通过 `.env` 或环境变量注入。
 - **并发安全**：知识库文件读写已加线程锁，支持多并发请求。
