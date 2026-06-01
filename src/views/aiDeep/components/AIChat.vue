@@ -483,4 +483,40 @@ const restart = () => {
   padding: 4px 8px;
   font-size: 14px;
 }
+
+@media (max-width: 768px) {
+  .chat-container {
+    min-height: 560px;
+    border-radius: 0;
+  }
+
+  .chat-history {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .message-item {
+    max-width: 94%;
+  }
+
+  .message-content {
+    padding: 10px 12px;
+  }
+
+  .chat-input {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .send-button,
+  .send-button :deep(.ant-btn) {
+    width: 100%;
+  }
+
+  :deep(.ant-input) {
+    min-height: 96px !important;
+    max-height: 160px !important;
+  }
+}
 </style>

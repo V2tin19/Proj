@@ -1019,4 +1019,80 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .agent-page {
+    min-height: 100svh;
+    padding: 12px;
+  }
+
+  .workspace {
+    display: block;
+    min-height: 0;
+  }
+
+  .left-panel,
+  .right-panel {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .right-panel {
+    margin-top: 12px;
+  }
+
+  .panel-header,
+  .result-header,
+  .section-title,
+  .card-tools,
+  .knowledge-top,
+  .card-head,
+  .template-title,
+  .result-actions,
+  .inline-switch,
+  .action-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .panel-header h1 {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+
+  .result-header h2 {
+    font-size: 20px;
+  }
+
+  .status-box {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .form-section {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .grid-two,
+  .config-grid,
+  .status-cards,
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-actions :deep(.ant-btn),
+  .action-bar :deep(.ant-btn),
+  .form-section > :deep(.ant-btn) {
+    width: 100%;
+  }
+
+  .editor-tabs :deep(.ant-tabs-nav) {
+    overflow-x: auto;
+  }
+
+  .editor-tabs :deep(.ant-tabs-nav-list) {
+    min-width: max-content;
+  }
+}
 </style>

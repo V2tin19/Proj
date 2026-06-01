@@ -158,4 +158,40 @@ label {
   color: var(--primary-color-hover);
   text-decoration: underline;
 }
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 16px 12px;
+  }
+
+  .settings-card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .title {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .preset-buttons {
+    gap: 8px;
+  }
+
+  .preset-buttons :deep(.ant-btn) {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .tips {
+    font-size: 12px;
+    text-align: left;
+    word-break: break-word;
+  }
+
+  .tips code {
+    white-space: normal;
+    word-break: break-all;
+  }
+}
 </style>

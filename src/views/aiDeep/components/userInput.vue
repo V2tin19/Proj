@@ -132,4 +132,24 @@ const handleExperienceChange = (value: string) => {
 :deep(.ant-input::-webkit-scrollbar-thumb:hover) {
   background: var(--color-6);
 }
+
+@media (max-width: 768px) {
+  .data-input {
+    height: auto;
+    padding: 14px;
+  }
+
+  .input-section {
+    flex: none;
+  }
+
+  .input-header {
+    font-size: 14px;
+  }
+
+  :deep(.custom-textarea),
+  :deep(.ant-input) {
+    min-height: 120px !important;
+  }
+}
 </style>

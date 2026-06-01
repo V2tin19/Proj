@@ -1,22 +1,9 @@
 <script setup lang="ts">
 import Header from "./components/Header/index.vue";
-import NarrowScreen from './components/narrow/index.vue';
 import { useResumeStore } from './store/useResumeStore';
 import { useSettingsStore } from './store/useSettingsStore';
-import { onMounted, ref, onBeforeMount } from 'vue';
+import { onMounted } from 'vue';
 const settingsStore = useSettingsStore();
-const showNarrowScreen = ref(false);
-
-
-// 检查屏幕宽度
-const checkScreenWidth = () => {
-  showNarrowScreen.value = window.innerWidth < 768;
-};
-
-onBeforeMount(() => {
-  checkScreenWidth();
-  window.addEventListener('resize', checkScreenWidth);
-});
 
 // 页面加载时初始化
 onMounted(async () => {
@@ -27,37 +14,38 @@ onMounted(async () => {
 </script>
 
 <template>
-  <narrow-screen v-if="showNarrowScreen" />
-  <template v-else>
-    <Header />
-    <a-config-provider :theme="{
-      token: {
-        colorPrimary: settingsStore.theme,
-      },
-    }">
-      <router-view v-slot="{ Component }">
-        <keep-alive include="aiDeep">
-          <component :is="Component" />
-        </keep-alive>
-      </router-view>
-    </a-config-provider>
-  </template>
+  <a-config-provider :theme="{
+    token: {
+      colorPrimary: settingsStore.theme,
+    },
+  }">
+    <div class="app-shell">
+      <Header />
+      <main class="app-content">
+        <router-view v-slot="{ Component }">
+          <keep-alive include="aiDeep">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
+      </main>
+    </div>
+  </a-config-provider>
 </template>
 
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.app-shell {
+  min-height: 100vh;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+.app-content {
+  min-height: calc(100vh - 72px);
 }
 
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+@media (max-width: 768px) {
+  .app-content {
+    min-height: 100svh;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
 }
 </style>

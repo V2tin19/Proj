@@ -49,7 +49,16 @@
 
     <a-button type="primary" @click="exportToPDF" id="export-button">导出PDF</a-button>
   </div>
-  <div class="preview" ref="resumePreview" @mousedown="startDragging" @wheel.prevent="handleZoom">
+  <div
+    class="preview"
+    ref="resumePreview"
+    @mousedown="startDragging"
+    @wheel.prevent="handleZoom"
+    @touchstart="startTouch"
+    @touchmove.prevent="onTouchMove"
+    @touchend="stopTouch"
+    @touchcancel="stopTouch"
+  >
     <div class="resume-content" :style="contentStyle">
       <!-- 动态渲染当前选中的模板组件 -->
       <component :is="currentComponent" :colorShades="colorShades" />
@@ -327,6 +336,16 @@ const state = reactive({
   contentWidth: 0,    // 内容宽度
   contentHeight: 0,   // 内容高度
 });
+const hasPreviewInteracted = ref(false);
+const touchState = reactive({
+  mode: null as 'pan' | 'pinch' | null,
+  initialDistance: 0,
+  initialScale: state.scale,
+  startMidX: 0,
+  startMidY: 0,
+  startTranslateX: 0,
+  startTranslateY: 0,
+});
 
 // 初始化预览和内容尺寸
 const updateBounds = async () => {
@@ -340,6 +359,14 @@ const updateBounds = async () => {
       state.contentWidth = content.offsetWidth;
       state.contentHeight = content.offsetHeight;
 
+      if (!hasPreviewInteracted.value) {
+        const horizontalPadding = window.innerWidth <= 768 ? 32 : 120;
+        const fitScale = (state.previewWidth - horizontalPadding) / state.contentWidth;
+        state.scale = Math.min(0.72, Math.max(0.28, Number.isFinite(fitScale) ? fitScale : 0.6));
+        state.translateX = 0;
+        state.translateY = 0;
+      }
+
       limitTranslation();
     }
   }
@@ -347,6 +374,7 @@ const updateBounds = async () => {
 
 // 缩放处理函数
 const handleZoom = (event: WheelEvent) => {
+  hasPreviewInteracted.value = true;
   const zoomSpeed = 0.1; // 缩放速度
   const oldScale = state.scale; // 记录旧的缩放比例
 
@@ -396,6 +424,7 @@ const limitTranslation = () => {
 // 开始拖拽
 const startDragging = (event: MouseEvent) => {
   event.preventDefault(); // 防止选中文本等行为
+  hasPreviewInteracted.value = true;
   state.dragging = true;
   state.startX = event.pageX - state.translateX;
   state.startY = event.pageY - state.translateY;
@@ -423,6 +452,72 @@ const stopDragging = () => {
   // 移除全局的鼠标移动和松开事件
   document.removeEventListener("mousemove", onDragging);
   document.removeEventListener("mouseup", stopDragging);
+};
+
+const getTouchDistance = (touches: TouchList) => {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+};
+
+const getTouchCenter = (touches: TouchList) => ({
+  x: (touches[0].clientX + touches[1].clientX) / 2,
+  y: (touches[0].clientY + touches[1].clientY) / 2,
+});
+
+const startTouch = (event: TouchEvent) => {
+  hasPreviewInteracted.value = true;
+  if (event.touches.length === 1) {
+    const touch = event.touches[0];
+    touchState.mode = 'pan';
+    state.dragging = true;
+    state.startX = touch.pageX - state.translateX;
+    state.startY = touch.pageY - state.translateY;
+  } else if (event.touches.length === 2) {
+    const center = getTouchCenter(event.touches);
+    touchState.mode = 'pinch';
+    touchState.initialDistance = getTouchDistance(event.touches);
+    touchState.initialScale = state.scale;
+    touchState.startMidX = center.x;
+    touchState.startMidY = center.y;
+    touchState.startTranslateX = state.translateX;
+    touchState.startTranslateY = state.translateY;
+    state.dragging = false;
+  }
+};
+
+const onTouchMove = (event: TouchEvent) => {
+  if (touchState.mode === 'pan' && event.touches.length === 1) {
+    const touch = event.touches[0];
+    state.translateX = touch.pageX - state.startX;
+    state.translateY = touch.pageY - state.startY;
+    limitTranslation();
+    return;
+  }
+
+  if (touchState.mode === 'pinch' && event.touches.length === 2 && touchState.initialDistance > 0) {
+    const center = getTouchCenter(event.touches);
+    const distance = getTouchDistance(event.touches);
+    state.scale = Math.min(3, Math.max(0.25, touchState.initialScale * (distance / touchState.initialDistance)));
+    state.translateX = touchState.startTranslateX + center.x - touchState.startMidX;
+    state.translateY = touchState.startTranslateY + center.y - touchState.startMidY;
+    limitTranslation();
+  }
+};
+
+const stopTouch = (event: TouchEvent) => {
+  if (event.touches.length === 1) {
+    const touch = event.touches[0];
+    touchState.mode = 'pan';
+    state.dragging = true;
+    state.startX = touch.pageX - state.translateX;
+    state.startY = touch.pageY - state.translateY;
+    return;
+  }
+
+  touchState.mode = null;
+  state.dragging = false;
+  limitTranslation();
 };
 
 // .resume-content 容器样式

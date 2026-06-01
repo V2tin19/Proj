@@ -89,32 +89,43 @@ onMounted(() => {
     linear-gradient(90deg, rgba(4, 7, 13, 0.98), rgba(13, 20, 32, 0.96) 40%, rgba(15, 31, 61, 0.95) 100%);
   border-bottom: 1px solid var(--border-color);
   box-shadow: 0 16px 40px var(--shadow-color);
-  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 72px;
+  padding: 0 16px;
+}
+
+.navbar nav {
+  width: min(100%, 980px);
 }
 
 .navbar nav ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
-}
-
-.navbar nav ul li {
-  float: left;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }
 
 .navbar nav ul li a {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   color: var(--text-color);
   text-align: center;
   font-size: 17px;
-  padding: 17px 16px;
+  min-height: 48px;
+  padding: 0 14px;
   text-decoration: none;
   transition: all 0.22s;
   border-radius: 14px;
-  margin: 10px 6px;
+  white-space: nowrap;
 }
 
 .navbar nav ul li a:hover {
@@ -125,5 +136,52 @@ onMounted(() => {
 .navbar nav ul li .router-link-active {
   background: rgba(59, 108, 255, 0.2);
   color: #ffffff;
+}
+
+.navbar :deep(.svg-icon) {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    min-height: calc(64px + env(safe-area-inset-bottom));
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border-color);
+    border-bottom: 0;
+    box-shadow: 0 -14px 32px var(--shadow-color);
+  }
+
+  .navbar nav {
+    width: 100%;
+  }
+
+  .navbar nav ul {
+    justify-content: space-between;
+    gap: 2px;
+  }
+
+  .navbar nav ul li {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .navbar nav ul li a {
+    width: 100%;
+    min-height: 52px;
+    padding: 6px 2px;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 12px;
+    font-size: 11px;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .navbar :deep(.svg-icon) {
+    font-size: 20px;
+  }
 }
 </style>

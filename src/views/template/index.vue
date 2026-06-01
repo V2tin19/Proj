@@ -237,16 +237,34 @@ const getTemplateImage = (template: Template): string => {
 }
 
 @media (max-width: 768px) {
+  .template-container {
+    padding: 16px 12px;
+  }
+
+  .page-header {
+    text-align: left;
+    margin-bottom: 18px;
+  }
+
+  .page-header :deep(.ant-typography) {
+    font-size: 22px;
+  }
+
   .template-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 0;
+  }
+
+  .template-card {
+    border-radius: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .template-grid {
     grid-template-columns: 1fr;
-    max-width: 280px;
-    margin: 0 auto;
+    max-width: none;
   }
 }
 </style>

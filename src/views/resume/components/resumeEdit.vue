@@ -208,4 +208,32 @@ const onDropToEnd = (event: DragEvent) => {
 .module-drop-zone svg {
   font-size: 16px;
 }
+
+@media (max-width: 768px) {
+  .resume-edit {
+    height: 100%;
+    padding: 10px;
+  }
+
+  .module-wrapper {
+    padding: 34px 8px 8px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+  }
+
+  .module-drag-handle {
+    left: 10px;
+    top: 8px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .module-drop-zone {
+    margin-bottom: 12px;
+  }
+
+  :deep(.ant-collapse-content-box) {
+    padding: 12px;
+  }
+}
 </style>

@@ -1,6 +1,17 @@
 <template>
   <div class="resume">
-    <div class="left">
+    <div class="mobile-view-tabs">
+      <a-segmented
+        v-model:value="mobilePane"
+        :options="[
+          { label: '编辑', value: 'edit' },
+          { label: '预览', value: 'preview' }
+        ]"
+        block
+      />
+    </div>
+
+    <div class="left" :class="{ 'is-mobile-hidden': mobilePane !== 'edit' }">
       <div class="btn-group">
         <a-popconfirm
           title="填充会覆盖当前数据，确定吗？"
@@ -49,7 +60,7 @@
       <resumeEdit />
     </div>
 
-    <div class="right">
+    <div class="right" :class="{ 'is-mobile-hidden': mobilePane !== 'preview' }">
       <resumePreview />
     </div>
   </div>
@@ -65,6 +76,7 @@ import { useResumeStore } from "../../store/useResumeStore";
 
 const resumeStore = useResumeStore();
 const fileList = ref<UploadProps["fileList"]>([]);
+const mobilePane = ref<'edit' | 'preview'>('edit');
 
 const handleFileUpload = (file: File) => {
   if (file.type !== "application/json") {
@@ -84,6 +96,10 @@ const handleFileUpload = (file: File) => {
   justify-content: space-between;
   height: calc(100vh - 60px);
   overflow: hidden;
+}
+
+.mobile-view-tabs {
+  display: none;
 }
 
 .left {
@@ -121,5 +137,93 @@ const handleFileUpload = (file: File) => {
 :deep(.resume-edit) {
   flex: 1;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .resume {
+    display: block;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    padding: 12px;
+  }
+
+  .mobile-view-tabs {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding-bottom: 10px;
+    background: linear-gradient(180deg, rgba(7, 11, 18, 0.98), rgba(7, 11, 18, 0.72));
+    backdrop-filter: blur(12px);
+  }
+
+  .left,
+  .right {
+    width: 100%;
+    min-width: 0;
+    height: calc(100svh - 148px);
+    min-height: 520px;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .left {
+    display: flex;
+    border-right: 1px solid var(--border-color);
+  }
+
+  .right {
+    display: block;
+  }
+
+  .is-mobile-hidden {
+    display: none !important;
+  }
+
+  .btn-group {
+    height: auto;
+    min-height: 58px;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 9px;
+    overflow-x: auto;
+  }
+
+  .btn-group :deep(.ant-btn) {
+    min-height: 38px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  :deep(.resume-edit) {
+    min-height: 0;
+  }
+
+  :deep(.ant-row) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    row-gap: 12px;
+  }
+
+  :deep(.ant-col) {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  :deep(.ant-input),
+  :deep(.ant-input-affix-wrapper),
+  :deep(.ant-select-selector),
+  :deep(.ant-picker),
+  :deep(.ant-input-number) {
+    min-height: 42px;
+  }
+
+  :deep(.ant-input-group-addon) {
+    white-space: nowrap;
+  }
 }
 </style>

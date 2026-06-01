@@ -108,4 +108,37 @@ provide("beginTour", beginTour);
   width: 30%;
   min-width: 250px;
 }
+
+@media (max-width: 768px) {
+  .main-box {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    margin: 12px;
+    padding: 0;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .left,
+  .right {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .left {
+    order: 2;
+    min-height: 560px;
+    border-right: 0;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .right {
+    order: 1;
+  }
+}
 </style>
