@@ -1,4 +1,4 @@
-FROM docker.m.daocloud.io/library/node:18-slim AS build
+FROM node:18-slim AS build
 WORKDIR /app
 
 ENV NODE_ENV=development
@@ -13,7 +13,7 @@ RUN npm install --include=dev --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM docker.m.daocloud.io/library/nginx:stable-alpine AS runtime
+FROM nginx:stable-alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
