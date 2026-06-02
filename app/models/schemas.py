@@ -23,6 +23,14 @@ class KnowledgeBaseConfig(BaseModel):
     embeddingProvider: str
 
 
+class KnowledgeBaseConfigUpdate(BaseModel):
+    chunkSize: int = Field(..., ge=50, le=2000)
+    chunkOverlap: int = Field(..., ge=0, le=500)
+    retrievalTopK: int = Field(..., ge=1, le=100)
+    matchAlgorithm: str = Field(..., min_length=1, max_length=100)
+    embeddingProvider: str = Field(..., min_length=1, max_length=100)
+
+
 class KnowledgeDocument(BaseModel):
     id: str
     name: str
@@ -85,6 +93,7 @@ class ResumeGenerateRequest(BaseModel):
     templateId: str = ""
     enableRag: bool = True
     retrievalTopK: Optional[int] = Field(default=None, ge=1, le=100)
+    wordCount: int = Field(default=800, ge=300, le=2000)
     educationExperiences: List[StudentEducationInput] = []
     workExperiences: List[StudentWorkInput] = []
     projectExperiences: List[StudentProjectInput] = []
