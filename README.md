@@ -147,6 +147,8 @@ pkill -f uvicorn
 | `HOST` | 监听地址 | `127.0.0.1` |
 | `CORS_ORIGINS` | 允许的跨域来源，逗号分隔 | `http://localhost:5173,http://127.0.0.1:5173` |
 
+> **注意**：首次安装 `sentence-transformers` 后，会自动下载 `BAAI/bge-small-zh-v1.5` 模型（约 100MB）到本地缓存。下载完成后向量检索功能即可使用。
+
 **使用 `.env` 文件（推荐）：**
 
 在 `backend/` 目录下新建 `.env`：
@@ -191,6 +193,13 @@ LLM call failed, falling back to local generation: ...
 ```
 
 同时自动降级为本地规则生成，服务不会崩溃。
+
+### 5.4 超时机制
+
+LLM 调用设置了 **55 秒超时**：
+- `httpx` 客户端 timeout = 55s
+- 外层 `asyncio.wait_for(timeout=55s)` 兜底
+- 超时后自动 fallback 到本地规则生成，避免用户长时间等待
 
 ---
 
@@ -245,10 +254,13 @@ curl -X POST http://localhost:3001/api/generate-resume \
 | GET | `/api/health` | 健康检查，查看 provider 状态 |
 | GET | `/api/prompt-templates` | 获取 5 套简历模板 |
 | GET | `/api/knowledge-base/config` | 获取知识库分块/检索配置 |
+| PUT | `/api/knowledge-base/config` | 修改知识库配置（分块大小、匹配算法等） |
 | GET | `/api/knowledge-base/documents` | 获取知识库文档列表 |
 | POST | `/api/knowledge-base/documents` | 添加文档到知识库（内容上限 50 万字符） |
+| POST | `/api/knowledge-base/documents/upload` | 上传文件解析入库（支持 .docx/.pdf/.txt/.md） |
 | DELETE | `/api/knowledge-base/documents/{id}` | 删除知识库文档 |
 | POST | `/api/generate-resume` | **核心接口**：输入信息 → 返回简历 JSON |
+| POST | `/api/export-resume/docx` | 导出简历为 Word 文档 |
 
 ### 生成简历请求示例
 
@@ -271,6 +283,7 @@ curl -X POST http://localhost:3001/api/generate-resume \
   "selfIntroduction": "热爱编程，喜欢钻研新技术",
   "templateId": "tech-rag",
   "enableRag": false,
+  "wordCount": 800,
   "educationExperiences": [
     {"school": "某某大学", "degree": "本科", "major": "计算机科学与技术", "startDate": "2021-09", "endDate": "2025-06"}
   ],
@@ -295,17 +308,25 @@ backend/
 │   ├── routes/
 │   │   ├── health.py           # 健康检查
 │   │   ├── templates.py        # 提示词模板列表（异步 I/O）
-│   │   ├── knowledge_base.py   # 知识库 CRUD（Pydantic 校验）
-│   │   └── resume.py           # 简历生成主接口（线程池执行检索）
+│   │   ├── knowledge_base.py   # 知识库 CRUD + 文件上传（Pydantic 校验）
+│   │   ├── resume.py           # 简历生成主接口（线程池执行检索）
+│   │   └── export.py           # Word 导出接口
 │   └── services/
-│       ├── knowledge_base.py   # 知识库检索（文件锁 + UUID）
-│       ├── llm_client.py       # OpenAI-Compatible LLM 调用
-│       └── resume_generator.py # 本地回退生成 + LLM 生成（含日志降级）
+│       ├── knowledge_base.py   # 知识库检索：token-overlap + vector-cosine
+│       ├── llm_client.py       # OpenAI-Compatible LLM 调用（55s 超时）
+│       ├── resume_generator.py # 本地回退生成 + LLM 生成（含日志降级）
+│       ├── docx_exporter.py    # Word 文档生成（python-docx）
+│       ├── document_parser.py  # 文件解析：.docx / .pdf / .txt / .md
+│       └── embedding_service.py # 本地 Embedding 编码（BGE 模型）
 ├── data/
 │   ├── prompt-templates.json   # 5 套简历模板提示词
-│   └── knowledge-base.json     # 知识库文档与配置
+│   ├── knowledge-base.json     # 知识库文档与配置
+│   └── vector-store.json       # 向量存储（chunk + embedding）
+├── tests/
+│   └── load_test_generate.py   # 20 并发压测脚本
 ├── test_api.py                 # API 自动化测试脚本
 ├── requirements.txt            # Python 依赖清单
+├── README_DEPLOY.md            # 生产部署指南（多 worker / vLLM / Ollama）
 ├── .env                        # 环境变量（本地创建，不提交）
 ├── run.bat                     # Windows 一键启动脚本
 └── run.sh                      # macOS/Linux 一键启动脚本
