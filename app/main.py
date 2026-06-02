@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import CORS_ORIGINS
-from app.routes import health, knowledge_base, resume, templates
+from app.routes import chat, health, knowledge_base, resume, templates
 
 app = FastAPI(
     title="AI Resume Backend",
@@ -24,6 +24,7 @@ app.include_router(health.router, prefix="/api", tags=["Health"])
 app.include_router(templates.router, prefix="/api", tags=["Templates"])
 app.include_router(knowledge_base.router, prefix="/api", tags=["Knowledge Base"])
 app.include_router(resume.router, prefix="/api", tags=["Resume Generation"])
+app.include_router(chat.router, prefix="/api", tags=["Chat Proxy"])
 
 
 @app.get("/")

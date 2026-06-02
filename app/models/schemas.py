@@ -166,6 +166,20 @@ class GeneratedResumeResponse(BaseModel):
     meta: dict
 
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    api_url: str = Field(..., min_length=1, description="第三方 LLM API 地址")
+    api_key: str = Field(..., min_length=1, description="API Key")
+    model: str = Field(..., min_length=1, description="模型名称")
+    messages: List[ChatMessage] = Field(..., min_length=1, description="对话消息列表")
+    stream: bool = Field(default=True, description="是否流式返回")
+    temperature: Optional[float] = Field(default=0.7, ge=0.0, le=2.0)
+
+
 class HealthResponse(BaseModel):
     ok: bool
     now: str
