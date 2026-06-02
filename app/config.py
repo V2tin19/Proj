@@ -18,6 +18,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 PROMPT_TEMPLATES_PATH = DATA_DIR / "prompt-templates.json"
 KNOWLEDGE_BASE_PATH = DATA_DIR / "knowledge-base.json"
+VECTOR_STORE_PATH = DATA_DIR / "vector-store.json"
 
 LLM_API_URL = os.getenv("LLM_API_URL", os.getenv("OPENAI_COMPATIBLE_API_URL", ""))
 LLM_API_KEY = os.getenv("LLM_API_KEY", os.getenv("OPENAI_API_KEY", ""))
