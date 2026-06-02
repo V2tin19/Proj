@@ -2,6 +2,8 @@
 
 Vue 3 + Vite 构建的简历生成前端，通过 nginx 反向代理连接后端 FastAPI 服务。
 
+**核心功能**：简历编辑与预览、AI 智能体生成、知识库管理、PDF/Word 导出。
+
 ---
 
 ## 目录
@@ -154,8 +156,11 @@ docker compose restart nginx
 │   └── conf.d/
 │       └── default.conf    # 反向代理规则
 ├── src/                    # Vue 源码
-│   ├── api/                # API 接口
+│   ├── api/                # API 接口封装
 │   ├── views/              # 页面组件
+│   │   ├── resume/         # 简历编辑与预览（含 PDF/Word 导出）
+│   │   ├── agent/          # AI 智能体工作台（生成 + 知识库管理）
+│   │   └── setting/        # 网站配置（模型接口设置）
 │   ├── components/         # 公共组件
 │   └── ...
 └── public/                 # 静态资源
