@@ -48,6 +48,7 @@
     </a-modal>
 
     <a-button type="primary" @click="exportToPDF" id="export-button">导出PDF</a-button>
+    <a-button type="primary" @click="exportToWord" style="margin-left: 10px;">导出Word</a-button>
   </div>
   <div
     class="preview"
@@ -76,6 +77,7 @@ import html2pdf from "html2pdf.js";
 import { createApp } from 'vue';
 import { storeToRefs } from 'pinia'
 import { message } from "ant-design-vue";
+import { exportResumeDocx } from "../../../api/agentAPI";
 // 主题色部分功能
 const resumeStore = useResumeStore();
 const { resumeSetting } = storeToRefs(resumeStore);
@@ -313,15 +315,53 @@ const exportToPDF = async () => {
   }
 };
 
+const exportToWord = async () => {
+  const resumeStore = useResumeStore();
+  try {
+    const payload = {
+      personalInfo: resumeStore.personalInfo,
+      education: resumeStore.education,
+      workExperience: resumeStore.workExperience,
+      skills: resumeStore.skills,
+      projects: resumeStore.projects,
+      honors: resumeStore.honors,
+      summary: resumeStore.summary,
+    };
+    const blob = await exportResumeDocx(payload as any);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "resume.docx";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    message.success("Word 导出成功");
+  } catch (error) {
+    console.error(error);
+    message.error("Word 导出失败，请检查后端是否启动");
+  }
+};
+
 
 // 简历预览拖拽事件功能
+// 获取预览容器的引用
+const resumePreview = ref<HTMLElement | null>(null);
+let resizeObserver: ResizeObserver | null = null;
+
 // 初始化函数，在组件挂载时调用
 onMounted(() => {
   updateBounds();
   window.addEventListener("resize", updateBounds);
+
+  // ResizeObserver: 处理移动端从 display:none 切换回可见时的尺寸重算
+  if (resumePreview.value && typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(() => {
+      updateBounds();
+    });
+    resizeObserver.observe(resumePreview.value);
+  }
 });
-// 获取预览容器的引用
-const resumePreview = ref<HTMLElement | null>(null);
 
 // 定义拖拽和缩放的状态
 const state = reactive({
@@ -539,6 +579,10 @@ const contentStyle = computed(() => ({
 // 组件销毁前移除事件监听
 onBeforeUnmount(() => {
   window.removeEventListener("resize", updateBounds);
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
 });
 </script>
 

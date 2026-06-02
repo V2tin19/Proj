@@ -17,6 +17,14 @@ export interface KnowledgeBaseConfig {
   embeddingProvider: string;
 }
 
+export interface KnowledgeBaseConfigUpdate {
+  chunkSize: number;
+  chunkOverlap: number;
+  retrievalTopK: number;
+  matchAlgorithm: string;
+  embeddingProvider: string;
+}
+
 export interface KnowledgeDocument {
   id: string;
   name: string;
@@ -73,6 +81,7 @@ export interface ResumeGenerateRequest {
   templateId: string;
   enableRag: boolean;
   retrievalTopK?: number;
+  wordCount?: number;
   educationExperiences: StudentEducationInput[];
   workExperiences: StudentWorkInput[];
   projectExperiences: StudentProjectInput[];
