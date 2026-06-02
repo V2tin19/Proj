@@ -36,7 +36,7 @@ async def call_openai_compatible(
         ],
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=55.0) as client:
         try:
             response = await client.post(
                 url,
@@ -47,7 +47,7 @@ async def call_openai_compatible(
                 json=payload,
             )
         except httpx.TimeoutException as exc:
-            raise RuntimeError("LLM API 请求超时（60秒）") from exc
+            raise RuntimeError("LLM API 请求超时（55秒）") from exc
         except httpx.ConnectError as exc:
             raise RuntimeError(f"无法连接到 LLM API: {url}") from exc
         except httpx.HTTPStatusError as exc:

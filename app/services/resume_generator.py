@@ -63,15 +63,24 @@ def _build_prompt_payload(input_data: ResumeGenerateRequest, template: PromptTem
 
 
 async def _call_llm(input_data: ResumeGenerateRequest, template: PromptTemplate, references: List[dict]) -> Dict[str, Any] | None:
+    import asyncio
+
     system_prompt = (
         f"{template.systemPrompt}\n"
         "你必须输出 JSON，字段结构为：personalInfo、education、workExperience、skills、projects、honors、summary。"
-        "不要输出 markdown。"
+        "不要输出 markdown。\n"
+        f"请将简历正文控制在 {input_data.wordCount} 字左右。"
     )
     user_prompt = json.dumps(_build_prompt_payload(input_data, template, references), ensure_ascii=False, indent=2)
 
     try:
-        return await call_openai_compatible(system_prompt, user_prompt)
+        return await asyncio.wait_for(
+            call_openai_compatible(system_prompt, user_prompt),
+            timeout=55.0,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("LLM call exceeded 55s, falling back to local generation")
+        return None
     except Exception as exc:
         logger.warning("LLM call failed, falling back to local generation: %s", exc)
         return None
