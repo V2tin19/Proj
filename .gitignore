@@ -47,3 +47,5 @@ Thumbs.db
 
 # 运行时数据（向量库自动重建，无需提交）
 data/vector-store.json
+
+.claude
