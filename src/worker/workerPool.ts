@@ -5,9 +5,6 @@ export class WorkerPool {
   private queue: {
     taskId: number;
     messages: DialogueHistory;
-    userApiKey: string;
-    model: string;
-    API_URL: string;
     onResponse: (responseText: string, isComplete: boolean) => void;
   }[] = []; // 任务队列
   private activeTasks: Map<number, Worker> = new Map(); // 正在执行的任务
@@ -41,20 +38,14 @@ export class WorkerPool {
   /**
    * 新增任务
    * @param messages  对话历史
-   * @param userApiKey  API Key
-   * @param model  选择的模型
-   * @param API_URL  请求 API 地址
    * @param onResponse  结果回调
    */
   execute(
     messages: DialogueHistory,
-    userApiKey: string,
-    model: string,
-    API_URL: string,
     onResponse: (responseText: string, isComplete: boolean) => void
   ): void {
     const taskId = this.nextTaskId++;
-    this.queue.push({ taskId, messages, userApiKey, model, API_URL, onResponse });
+    this.queue.push({ taskId, messages, onResponse });
     this.processQueue();
   }
 
@@ -64,12 +55,12 @@ export class WorkerPool {
   private processQueue() {
     if (this.queue.length > 0 && this.workers.length > 0) {
       const worker = this.workers.pop()!;
-      const { taskId, messages, userApiKey, model, API_URL, onResponse } = this.queue.shift()!;
+      const { taskId, messages, onResponse } = this.queue.shift()!;
       this.activeTasks.set(taskId, worker);
       try {
         // postMessage自动克隆出现问题，这里手动克隆 messages
         const clonedMessages = JSON.parse(JSON.stringify(messages));
-        worker.postMessage({ taskId, messages: clonedMessages, userApiKey, model, API_URL });
+        worker.postMessage({ taskId, messages: clonedMessages });
         console.log(`任务${taskId}分配给 Worker:${worker}`);
         worker.onmessage = (event) => {
           const { taskId, result, isComplete } = event.data;

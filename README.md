@@ -71,7 +71,7 @@ Proj/
 ```bash
 cd backend
 
-# 创建 .env
+# 创建 .env（大模型凭据由后端统一管理）
 cat > .env << 'EOF'
 LLM_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
 LLM_API_KEY=sk-你的Key
@@ -87,6 +87,8 @@ docker run -d \
   --env-file .env \
   proj-backend
 ```
+
+> 前端不再保存或传递 API Key、API URL、模型名称。这些配置统一在后端 `.env` 中设置。
 
 **Step 2：启动前端**
 
@@ -160,7 +162,7 @@ docker compose restart nginx
 │   ├── views/              # 页面组件
 │   │   ├── resume/         # 简历编辑与预览（含 PDF/Word 导出）
 │   │   ├── agent/          # AI 智能体工作台（生成 + 知识库管理）
-│   │   └── setting/        # 网站配置（模型接口设置）
+│   │   └── setting/        # 网站配置（主题等前端设置）
 │   ├── components/         # 公共组件
 │   └── ...
 └── public/                 # 静态资源

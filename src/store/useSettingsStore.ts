@@ -7,9 +7,6 @@ export const useSettingsStore = defineStore(
     const getStoredTheme = () => localStorage.getItem('theme');
     const isDark = ref<boolean>(getStoredTheme() ? getStoredTheme() === 'dark' : true);
     const theme = ref<string>(isDark.value ? '#3b6cff' : '#2d5bff');
-    const aliApiKey = ref<string>('');
-    const aliApiUrl = import.meta.env.VITE_API_URL;
-    const modelName = ref<string>('qwen-turbo');
 
     const applyTheme = (dark: boolean) => {
       theme.value = dark ? '#3b6cff' : '#2d5bff';
@@ -40,9 +37,6 @@ export const useSettingsStore = defineStore(
       theme,
       toggleTheme,
       initTheme,
-      aliApiKey,
-      aliApiUrl,
-      modelName
     };
   },
   {

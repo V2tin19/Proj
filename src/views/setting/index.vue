@@ -5,80 +5,28 @@
 
       <!-- 说明文字 -->
       <p class="tips">
-        注意：此处调用接口使用的是 OpenAI 的接口格式
-        （换言之，只要你的大模型接口厂商使用的是 OpenAI 格式，你填入都能正常调用接口）
-        <span style="color:red">不会配置就选下面的预设，或只填 API Key 即可</span>
+        大模型调用相关的 API Key、API URL、模型名称等配置已迁移至后端环境变量管理。
+        如需调整，请修改后端 <code>.env</code> 文件并重启后端服务。
       </p>
 
-      <!-- 平台预设按钮 -->
-      <div class="preset-buttons">
-        <a-button
-          v-for="preset in presets"
-          :key="preset.name"
-          :type="currentPreset === preset.name ? 'primary' : 'default'"
-          @click="applyPreset(preset)"
-        >
-          {{ preset.name }}
-        </a-button>
-      </div>
-
+      <!-- 主题切换 -->
       <div class="input-group">
-        <label for="model-name">大模型名称<span style="color:red">（不懂勿改）</span></label>
-        <a-input id="model-name" v-model:value="settingsStore.modelName" placeholder="请输入模型名称" />
-        <p class="tips">
-          模型名称示例：qwen-turbo、qwen-plus、deepseek-chat、gpt-3.5-turbo
-        </p>
-      </div>
-
-      <div class="input-group">
-        <label for="api-key">API Key（使用大模型）</label>
-        <a-input id="api-key" v-model:value="settingsStore.aliApiKey" placeholder="请输入 API Key" />
-        <p class="tips">
-          请填写 API Key 用于调用 AI 模型。
-          <a href="https://bailian.console.aliyun.com/?apiKey=1#/api-key" target="_blank">阿里云百炼 API Key</a>
-          |
-          <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek API Key</a>
-        </p>
-      </div>
-
-      <div class="input-group">
-        <label for="api-url">API URL<span style="color:red">（不懂勿改）</span></label>
-        <a-input id="api-url" v-model:value="settingsStore.aliApiUrl" placeholder="请输入 API URL" />
-        <p class="tips">
-          必须以 <code>/v1/chat/completions</code> 结尾。常用地址：
-          <br>阿里云：<code>https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions</code>
-          <br>DeepSeek：<code>https://api.deepseek.com/v1/chat/completions</code>
-        </p>
+        <label>主题模式</label>
+        <a-switch
+          v-model:checked="settingsStore.isDark"
+          checked-children="深色"
+          un-checked-children="浅色"
+          @change="settingsStore.toggleTheme"
+        />
       </div>
     </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 const settingsStore = useSettingsStore();
-const currentPreset = ref('');
-
-const presets = [
-  {
-    name: '阿里云百炼',
-    modelName: 'qwen-turbo',
-    aliApiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-  },
-  {
-    name: 'DeepSeek',
-    modelName: 'deepseek-chat',
-    aliApiUrl: 'https://api.deepseek.com/v1/chat/completions',
-  },
-];
-
-const applyPreset = (preset: typeof presets[0]) => {
-  currentPreset.value = preset.name;
-  settingsStore.modelName = preset.modelName;
-  settingsStore.aliApiUrl = preset.aliApiUrl;
-};
 </script>
 
 <style scoped>
@@ -106,13 +54,6 @@ const applyPreset = (preset: typeof presets[0]) => {
   margin-bottom: 24px;
   text-align: center;
   color: var(--primary-color);
-}
-
-.preset-buttons {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 .input-group {
@@ -147,18 +88,6 @@ label {
   font-size: 12px;
 }
 
-.tips a {
-  color: var(--primary-color);
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.3s;
-}
-
-.tips a:hover {
-  color: var(--primary-color-hover);
-  text-decoration: underline;
-}
-
 @media (max-width: 768px) {
   .settings-container {
     padding: 16px 12px;
@@ -174,24 +103,10 @@ label {
     margin-bottom: 16px;
   }
 
-  .preset-buttons {
-    gap: 8px;
-  }
-
-  .preset-buttons :deep(.ant-btn) {
-    flex: 1;
-    min-width: 120px;
-  }
-
   .tips {
     font-size: 12px;
     text-align: left;
     word-break: break-word;
-  }
-
-  .tips code {
-    white-space: normal;
-    word-break: break-all;
   }
 }
 </style>
