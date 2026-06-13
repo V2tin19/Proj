@@ -81,44 +81,46 @@ pip install -r requirements.txt
 **Windows（PowerShell）：**
 
 ```powershell
-$env:PORT = "3001"
+$env:PORT = "8000"
 venv\Scripts\python.exe -m uvicorn app.main:app --port $env:PORT --reload
 ```
 
 **Windows（CMD）：**
 
 ```cmd
-set PORT=3001
+set PORT=8000
 venv\Scripts\python.exe -m uvicorn app.main:app --port %PORT% --reload
 ```
 
 **macOS / Linux：**
 
 ```bash
-PORT=3001 python -m uvicorn app.main:app --port $PORT --reload
+PORT=8000 python -m uvicorn app.main:app --port $PORT --reload
 ```
 
 启动成功后控制台会显示：
 
 ```
-INFO:     Uvicorn running on http://127.0.0.1:3001 (Press CTRL+C to quit)
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
 
-### 3.2 为什么端口是 3001？
+### 3.2 为什么端口是 8000？
 
-前端 `Proj/vite.config.ts` 里代理配置为：
+后端默认监听 **8000** 端口（由 `config.py` 中的 `PORT` 环境变量决定）。
+
+前端开发服务器 `vite.config.ts` 里代理配置为：
 
 ```ts
 proxy: {
   "/api": {
-    target: "http://127.0.0.1:3001"
+    target: "http://127.0.0.1:8000"
   }
 }
 ```
 
-因此后端必须跑在 **3001** 端口，前端才能自动把 `/api/*` 请求转发过来。
+因此本地开发时，后端跑在 **8000** 端口，前端 `npm run dev` 才能自动把 `/api/*` 请求转发过来。
 
-如果你想用其他端口，同时修改前端的 `vite.config.ts` 即可。
+如果你想用其他端口，需要同时修改前端 `vite.config.ts` 中的 `target` 和后端启动命令中的 `PORT`。
 
 ### 3.3 关闭服务
 
@@ -178,7 +180,7 @@ LLM_MODEL=qwen-plus
 ### 5.2 验证大模型是否生效
 
 ```bash
-curl http://localhost:3001/api/health
+curl http://localhost:8000/api/health
 ```
 
 - 未配置 API：`"provider": "local-fallback"`
@@ -207,7 +209,7 @@ LLM 调用设置了 **55 秒超时**：
 
 ### 6.1 一键测试脚本
 
-确保后端在 3001 端口运行，然后执行：
+确保后端在 8000 端口运行，然后执行：
 
 ```bash
 # Windows
@@ -227,13 +229,13 @@ Result: 8 passed, 0 failed
 
 ```bash
 # 健康检查
-curl http://localhost:3001/api/health
+curl http://localhost:8000/api/health
 
 # 查看模板列表
-curl http://localhost:3001/api/prompt-templates
+curl http://localhost:8000/api/prompt-templates
 
 # 生成简历（最小参数）
-curl -X POST http://localhost:3001/api/generate-resume \
+curl -X POST http://localhost:8000/api/generate-resume \
   -H "Content-Type: application/json" \
   -d '{"name":"测试","templateId":"campus-concise","enableRag":false}'
 ```
@@ -242,8 +244,8 @@ curl -X POST http://localhost:3001/api/generate-resume \
 
 浏览器打开：
 
-- Swagger UI：`http://localhost:3001/docs`
-- ReDoc：`http://localhost:3001/redoc`
+- Swagger UI：`http://localhost:8000/docs`
+- ReDoc：`http://localhost:8000/redoc`
 
 ---
 
