@@ -96,20 +96,20 @@
 
 | 问题                                                                                            | 位置                   | 严重程度 |
 | ----------------------------------------------------------------------------------------------- | ---------------------- | -------- |
-| **SSRF 漏洞**：`/api/chat` 接受客户端传入的任意 `api_url`，无任何校验，可探测内网服务、云元数据 | `routes/chat.py:33-39` | 高       |
+| **SSRF 漏洞**：`/api/chat` 接受客户端传入的任意 `api_url`，无任何校验，可探测内网服务、云元数据（已修改） | `routes/chat.py:33-39` | 高       |
 | **无认证鉴权**：所有端点完全开放，无 JWT/Session/任何身份验证                                   | 全局                   | 高       |
 | **无速率限制**：`/api/chat` 可被滥用为 LLM API 免费代理                                         | 全局                   | 中       |
 | **CORS 过于宽松**：`allow_methods=["*"]` + `allow_headers=["*"]` + `allow_credentials=True`     | `main.py:15-21`        | 中       |
-| **API Key 明文传输**：`api_key` 在请求体中，可能被日志记录                                      | `routes/chat.py`       | 低       |
+| **API Key 明文传输**：`api_key` 在请求体中，可能被日志记录（已修改）                                      | `routes/chat.py`       | 低       |
 
 ### 4.2 代码质量问题
 
 | 问题                                                                                                                                       | 位置                                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| **跨模块引用私有函数**：`resume.py` 导入 `templates.py` 的 `_load_templates`，应抽取到 service 层                                          | `routes/resume.py:8`                                                                    |
-| **已废弃 API**：使用 `asyncio.get_event_loop()`（Python 3.10+ 废弃），6 处                                                                 | `routes/templates.py:25`, `routes/knowledge_base.py:21,52,69,81`, `routes/resume.py:42` |
-| **未使用的导入**：`chat.py` 的 `json`、`docx_exporter.py` 的 `List`、`embedding_service.py` 的 `Optional`、`resume.py` 的 `PromptTemplate` | 各文件                                                                                  |
-| **配置变量定义但未使用**：`config.py` 中的 `HOST` 和 `PORT` 从未被导入                                                                     | `config.py:27-28`                                                                       |
+| **跨模块引用私有函数**：`resume.py` 导入 `templates.py` 的 `_load_templates`，应抽取到 service 层（已修改）                                          | `routes/resume.py:8`                                                                    |
+| **已废弃 API**：使用 `asyncio.get_event_loop()`（Python 3.10+ 废弃），6 处（已修改）                                                                 | `routes/templates.py:25`, `routes/knowledge_base.py:21,52,69,81`, `routes/resume.py:42` |
+| **未使用的导入**：`chat.py` 的 `json`、`docx_exporter.py` 的 `List`、`embedding_service.py` 的 `Optional`、`resume.py` 的 `PromptTemplate`（已修改） | 各文件                                                                                  |
+| **配置变量定义但未使用**：`config.py` 中的 `HOST` 和 `PORT` 从未被导入（已修改）                                                                     | `config.py:27-28`                                                                       |
 | **无日志配置**：应用未配置 root logger，INFO 级别日志在生产环境会被静默丢弃                                                                | 全局                                                                                    |
 | **错误信息语言不一致**：中文和英文错误信息混用，无统一规范                                                                                 | 全局                                                                                    |
 | **线程锁在多进程下失效**：`threading.Lock` 仅在单进程模式下有效，uvicorn 多 worker 模式下不安全                                            | `services/knowledge_base.py:22`                                                         |
@@ -118,9 +118,9 @@
 
 | 问题                                                                                                                        | 位置                         |
 | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| **种子数据算法名错误**：`"matchAlgorithm": "keyword-overlap"` 不是合法值，代码只识别 `"token-overlap"` 和 `"vector-cosine"` | `data/knowledge-base.json:6` |
-| **端口不一致**：README 要求后端运行在 3001 端口，代码默认 8000，`config.py` 默认 127.0.0.1，`run.sh` 默认 0.0.0.0           | 多处                         |
-| **embeddingProvider 值不匹配**：种子数据 `"local-fallback"` vs 代码默认 `"local"`                                           | `data/knowledge-base.json:7` |
+| **种子数据算法名错误**：`"matchAlgorithm": "keyword-overlap"` 不是合法值，代码只识别 `"token-overlap"` 和 `"vector-cosine"`（已修改） | `data/knowledge-base.json:6` |
+| **端口不一致**：README 要求后端运行在 3001 端口，代码默认 8000，`config.py` 默认 127.0.0.1，`run.sh` 默认 0.0.0.0（已修改）           | 多处                         |
+| **embeddingProvider 值不匹配**：种子数据 `"local-fallback"` vs 代码默认 `"local"`（已修改）                                           | `data/knowledge-base.json:7` |
 
 ## 五、未完成的部分
 
