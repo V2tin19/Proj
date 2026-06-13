@@ -168,7 +168,7 @@
 
 以下内容属于后端职责，但存在于前端代码中，违反前后端分离原则。
 
-#### 4.9.1 `worker.js` — 服务端代理混入前端仓库
+#### 4.9.1 `worker.js` — 服务端代理混入前端仓库（已修改）
 
 项目根目录的 `worker.js` 是一个 **Cloudflare Workers 服务端代理**，负责：
 - 处理 CORS 头
@@ -179,7 +179,7 @@
 
 这是一个需要独立部署的服务端组件，与 Vue 构建流程无关，不应放在前端仓库中。应归属后端或独立的边缘函数项目。
 
-#### 4.9.2 API Key 由前端持有和传递
+#### 4.9.2 API Key 由前端持有和传递（已修改）
 
 `src/store/useSettingsStore.ts` 通过 `pinia-plugin-persistedstate` 将 `aliApiKey` 持久化到 **localStorage**。`src/views/setting/index.vue` 提供 UI 让用户直接在浏览器输入 API Key。
 
@@ -190,7 +190,7 @@
 
 API Key 应由后端统一管理，前端不应接触。
 
-#### 4.9.3 LLM API 地址和模型参数由前端控制
+#### 4.9.3 LLM API 地址和模型参数由前端控制（已修改）
 
 - `useSettingsStore` 中 `aliApiUrl` 默认值来自 `import.meta.env.VITE_API_URL`，但用户可在设置页修改为任意地址。
 - `src/worker/aiWorker.ts` 硬编码 `temperature: 0.7`。
@@ -198,7 +198,7 @@ API Key 应由后端统一管理，前端不应接触。
 
 这意味着后端 `/api/chat` 没有自己的业务逻辑，完全听命于前端传参。模型选择、API 地址路由、温度参数等模型调用策略应由后端决定。
 
-#### 4.9.4 SSE 协议解析在前端完成
+#### 4.9.4 SSE 协议解析在前端完成（已修改）
 
 `src/worker/aiWorker.ts` 在 Web Worker 中解析 OpenAI 格式的 SSE 流：
 - 按 `\n` 分割，过滤空行
@@ -208,7 +208,7 @@ API Key 应由后端统一管理，前端不应接触。
 
 这是 LLM API 的协议实现细节，应封装在后端。前端只需接收后端标准化后的内容流。
 
-#### 4.9.5 前端直接编排 LLM 调用链路
+#### 4.9.5 前端直接编排 LLM 调用链路（已修改）
 
 `qwenAPI.ts` → `workerPool.ts` → `aiWorker.ts` → `/api/chat` → 外部 LLM API
 
@@ -249,9 +249,9 @@ API Key 应由后端统一管理，前端不应接触。
 ## 六、优先修复建议
 
 1. **高优先**：为 `marked` 输出添加 DOMPurify 消毒，消除 XSS 风险。
-2. **高优先**：将 API Key 管理移至后端，前端不再持有和传递 Key。`worker.js` 移出前端仓库。
-3. **高优先**：后端 `/api/chat` 应自主管理模型调用策略（API 地址、模型选择、温度参数），前端仅传语义化请求。
-4. **高优先**：SSE 协议解析移至后端，前端接收标准化内容流。
+2. **高优先**：将 API Key 管理移至后端，前端不再持有和传递 Key。`worker.js` 移出前端仓库。（已修改）
+3. **高优先**：后端 `/api/chat` 应自主管理模型调用策略（API 地址、模型选择、温度参数），前端仅传语义化请求。（已修改）
+4. **高优先**：SSE 协议解析移至后端，前端接收标准化内容流。（已修改）
 5. **高优先**：移除 `vite.config.ts` 中的 `mode: "development"` 硬编码。
 6. **中优先**：修复 `templateA/index.vue` 全局字体大小副作用，改为组件作用域。
 7. **中优先**：移除 `personalInfo.vue` 的冗余深度监听。
