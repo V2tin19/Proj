@@ -18,7 +18,7 @@ async def get_knowledge_base_config():
 
 @router.put("/knowledge-base/config", response_model=KnowledgeBaseConfig)
 async def update_knowledge_base_config(payload: KnowledgeBaseConfigUpdate):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         None,
         kb_service.update_config,
@@ -49,7 +49,7 @@ async def upload_knowledge_document(file: UploadFile = File(...)):
 
     # 使用文件名（去掉扩展名）作为文档名称
     name = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         None,
         kb_service.add_document,
@@ -66,7 +66,7 @@ async def get_knowledge_documents():
 
 @router.post("/knowledge-base/documents", response_model=KnowledgeDocument, status_code=201)
 async def create_knowledge_document(payload: KnowledgeDocumentCreate):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         None,
         kb_service.add_document,
@@ -78,7 +78,7 @@ async def create_knowledge_document(payload: KnowledgeDocumentCreate):
 
 @router.delete("/knowledge-base/documents/{document_id}")
 async def delete_knowledge_document(document_id: str):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     removed = await loop.run_in_executor(
         None,
         kb_service.remove_document,

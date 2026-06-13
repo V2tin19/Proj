@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-from typing import List
 
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor

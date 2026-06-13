@@ -3,8 +3,8 @@
     "chunkSize": 180,
     "chunkOverlap": 30,
     "retrievalTopK": 3,
-    "matchAlgorithm": "keyword-overlap",
-    "embeddingProvider": "local-fallback"
+    "matchAlgorithm": "token-overlap",
+    "embeddingProvider": "local"
   },
   "documents": [
     {

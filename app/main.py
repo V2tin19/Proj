@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import CORS_ORIGINS
+from app.config import CORS_ORIGINS, HOST, PORT
 from app.routes import chat, export, health, knowledge_base, resume, templates
 
 app = FastAPI(
@@ -31,3 +31,8 @@ app.include_router(chat.router, prefix="/api", tags=["Chat Proxy"])
 @app.get("/")
 async def root():
     return {"message": "AI Resume Backend is running", "docs": "/docs"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host=HOST, port=PORT)
