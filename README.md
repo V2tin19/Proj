@@ -260,6 +260,7 @@ curl -X POST http://localhost:3001/api/generate-resume \
 | POST | `/api/knowledge-base/documents/upload` | 上传文件解析入库（支持 .docx/.pdf/.txt/.md） |
 | DELETE | `/api/knowledge-base/documents/{id}` | 删除知识库文档 |
 | POST | `/api/generate-resume` | **核心接口**：输入信息 → 返回简历 JSON |
+| POST | `/api/chat` | AI 对话流式接口（后端管理模型凭据） |
 | POST | `/api/export-resume/docx` | 导出简历为 Word 文档 |
 
 ### 生成简历请求示例
@@ -293,6 +294,27 @@ curl -X POST http://localhost:3001/api/generate-resume \
   ]
 }
 ```
+
+### AI 对话接口 `/api/chat`
+
+前端 AI 深度交流页面通过 `POST /api/chat` 发起流式对话。请求体只需提供对话消息：
+
+```json
+{
+  "messages": [
+    {"role": "system", "content": "你是一个简历优化师..."},
+    {"role": "user", "content": "你好"}
+  ],
+  "stream": true
+}
+```
+
+后端会：
+1. 使用环境变量中的 `LLM_API_URL`、`LLM_API_KEY`、`LLM_MODEL` 调用上游大模型
+2. 解析 OpenAI 格式的 SSE 流
+3. 将增量文本以简化 SSE 格式返回给前端：`data: <文本片段>\n\n`，最后 `data: [DONE]\n\n`
+
+因此 **前端不再接触 API Key、API URL、模型名称等敏感信息**。
 
 ---
 

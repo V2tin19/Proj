@@ -24,6 +24,12 @@ LLM_API_URL = os.getenv("LLM_API_URL", os.getenv("OPENAI_COMPATIBLE_API_URL", ""
 LLM_API_KEY = os.getenv("LLM_API_KEY", os.getenv("OPENAI_API_KEY", ""))
 LLM_MODEL = os.getenv("LLM_MODEL", os.getenv("OPENAI_MODEL", "qwen-plus"))
 
+_CHAT_TEMPERATURE_DEFAULT = 0.7
+try:
+    CHAT_TEMPERATURE = float(os.getenv("CHAT_TEMPERATURE", str(_CHAT_TEMPERATURE_DEFAULT)))
+except ValueError:
+    CHAT_TEMPERATURE = _CHAT_TEMPERATURE_DEFAULT
+
 PORT = _get_port()
 HOST = os.getenv("HOST", "127.0.0.1")
 

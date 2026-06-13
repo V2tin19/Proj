@@ -1,4 +1,13 @@
-"""Chat proxy endpoint — forwards requests to third-party LLM APIs."""
+"""Chat endpoint — backend-managed LLM streaming proxy.
+
+The backend is responsible for:
+- Holding LLM credentials (API URL, API Key, model)
+- Deciding model parameters (temperature, etc.)
+- Parsing the upstream OpenAI-compatible SSE stream
+- Returning a simplified SSE stream to the frontend
+
+The frontend only sends `messages` and receives `data: <text>` events.
+"""
 
 from __future__ import annotations
 
@@ -10,23 +19,30 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED, HTTP_502_BAD_GATEWAY, HTTP_504_GATEWAY_TIMEOUT
 
+from app.config import CHAT_TEMPERATURE, LLM_API_KEY, LLM_API_URL, LLM_MODEL
 from app.models.schemas import ChatRequest
 
 router = APIRouter()
 
 
-async def _stream_llm(request: ChatRequest) -> AsyncIterator[str]:
-    """Stream raw text chunks from the upstream LLM API."""
+async def _upstream_stream(messages: list, stream: bool) -> AsyncIterator[str]:
+    """Stream raw SSE chunks from the upstream LLM API."""
+    if not LLM_API_URL or not LLM_API_KEY:
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="后端未配置 LLM_API_URL / LLM_API_KEY，无法调用大模型",
+        )
+
     payload = {
-        "model": request.model,
-        "messages": [{"role": m.role, "content": m.content} for m in request.messages],
-        "stream": request.stream,
-        "temperature": request.temperature,
+        "model": LLM_MODEL,
+        "messages": messages,
+        "stream": stream,
+        "temperature": CHAT_TEMPERATURE,
     }
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {request.api_key}",
+        "Authorization": f"Bearer {LLM_API_KEY}",
         "Accept": "text/event-stream",
     }
 
@@ -34,7 +50,7 @@ async def _stream_llm(request: ChatRequest) -> AsyncIterator[str]:
         try:
             async with client.stream(
                 "POST",
-                request.api_url,
+                LLM_API_URL,
                 headers=headers,
                 json=payload,
             ) as response:
@@ -69,15 +85,56 @@ async def _stream_llm(request: ChatRequest) -> AsyncIterator[str]:
         except httpx.ConnectError as exc:
             raise HTTPException(
                 status_code=HTTP_502_BAD_GATEWAY,
-                detail=f"无法连接到上游 LLM API: {request.api_url}",
+                detail=f"无法连接到上游 LLM API: {LLM_API_URL}",
             ) from exc
+
+
+async def _parse_upstream_sse(raw_stream: AsyncIterator[str]) -> AsyncIterator[str]:
+    """Parse OpenAI-compatible SSE and yield simplified SSE events.
+
+    Output format:
+        data: <delta text>\n\n
+        ...
+        data: [DONE]\n\n
+    """
+    buffer = ""
+    async for chunk in raw_stream:
+        buffer += chunk
+        while "\n" in buffer:
+            line, buffer = buffer.split("\n", 1)
+            line = line.strip()
+            if not line:
+                continue
+            if not line.startswith("data: "):
+                continue
+            json_text = line[len("data: "):].strip()
+            if json_text == "[DONE]":
+                yield "data: [DONE]\n\n"
+                continue
+            try:
+                parsed = json.loads(json_text)
+            except json.JSONDecodeError:
+                continue
+            delta = parsed.get("choices", [{}])[0].get("delta", {}).get("content")
+            if delta:
+                # Escape newlines in SSE data field
+                safe_delta = delta.replace("\r\n", "\n").replace("\n", "\ndata: ")
+                yield f"data: {safe_delta}\n\n"
+
+
+async def _chat_stream(request: ChatRequest) -> AsyncIterator[str]:
+    """Main chat streaming generator."""
+    messages = [{"role": m.role, "content": m.content} for m in request.messages]
+    raw_stream = _upstream_stream(messages, request.stream)
+    async for event in _parse_upstream_sse(raw_stream):
+        yield event
 
 
 @router.post("/chat")
 async def chat_endpoint(request: ChatRequest):
-    """Proxy chat request to third-party LLM and stream SSE response."""
+    """Chat with backend-managed LLM and receive a simplified SSE stream."""
     return StreamingResponse(
-        _stream_llm(request),
+        _chat_stream(request),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
