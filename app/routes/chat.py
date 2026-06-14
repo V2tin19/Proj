@@ -27,12 +27,6 @@ router = APIRouter()
 
 async def _upstream_stream(messages: list, stream: bool) -> AsyncIterator[str]:
     """Stream raw SSE chunks from the upstream LLM API."""
-    if not LLM_API_URL or not LLM_API_KEY:
-        raise HTTPException(
-            status_code=HTTP_502_BAD_GATEWAY,
-            detail="后端未配置 LLM_API_URL / LLM_API_KEY，无法调用大模型",
-        )
-
     payload = {
         "model": LLM_MODEL,
         "messages": messages,
@@ -133,6 +127,11 @@ async def _chat_stream(request: ChatRequest) -> AsyncIterator[str]:
 @router.post("/chat")
 async def chat_endpoint(request: ChatRequest):
     """Chat with backend-managed LLM and receive a simplified SSE stream."""
+    if not LLM_API_URL or not LLM_API_KEY:
+        raise HTTPException(
+            status_code=HTTP_502_BAD_GATEWAY,
+            detail="后端未配置 LLM_API_URL / LLM_API_KEY，无法调用大模型",
+        )
     return StreamingResponse(
         _chat_stream(request),
         media_type="text/event-stream",

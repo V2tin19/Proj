@@ -8,12 +8,12 @@ set -e
 cd "$(dirname "$0")"
 
 # 激活虚拟环境
-if [ -f "venv/Scripts/activate" ]; then
-    source venv/Scripts/activate
-elif [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate
+if [ -f ".venv/Scripts/activate" ]; then
+    source .venv/Scripts/activate
+elif [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
 else
-    echo "虚拟环境不存在，请先执行: python -m venv venv && pip install -r requirements.txt"
+    echo "虚拟环境不存在，请先执行: python -m venv .venv && pip install -r requirements.txt"
     exit 1
 fi
 
