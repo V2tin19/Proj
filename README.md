@@ -1,327 +1,207 @@
-# 基于大模型的学生个人简历撰写智能体 ---- 小组项目启动文档
+# AI 简历生成器
 
----
+基于大模型的学生个人简历撰写智能体。用户填写个人信息、选择模板，系统通过 LLM（DeepSeek/Qwen）自动生成排版精美的简历，支持 PDF/Word 导出。
 
-## 0. 写在前面
+## 1. 功能
 
-### 做什么？
+- **简历生成**：5 种风格模板（简约校招、商务正式、创意亮点、技术研发、升学科研），LLM 自动生成文案
+- **RAG 知识库**：上传优秀简历文档，系统进行文本分块、向量嵌入，生成时检索相关片段作为上下文
+- **在线预览**：网页内直接预览简历，支持 PDF/Word 下载
+- **AI 对话**：SSE 流式传输，Web Worker 处理，实时交互
+- **深度交流**：独立的 AI 深度对话页面，支持上下文保持
 
-**一个网页应用**：同学填上自己的信息，选个喜欢的简历模板，系统自动生成排版精美的简历，可以直接下载 PDF 或 Word 拿去投。
-**核心**：填信息 → AI写内容 → 生成漂亮文档 → 下载。
-**要做到**：
+## 2. 技术栈
 
-- 用大模型（DeepSeek、Qwen）来写简历文案
-- 允许同学上传自己收集的优秀简历作资料库
-- 至少 5 种不同风格模板
-- 20 个人同时用不崩，生成速度要在 1 分钟内
-- 使用 Docker 进行部署，避免 “我机器能跑” 这种问题，麻烦之处请大家谅解
+| 层       | 技术                                                     |
+| -------- | -------------------------------------------------------- |
+| 后端     | Python 3.11 + FastAPI + Uvicorn                          |
+| 前端     | Vue 3.5 + TypeScript 5.7 + Vite 6.1 + Ant Design Vue 4.2 |
+| 状态管理 | Pinia 3.0                                                |
+| LLM      | DeepSeek / Qwen（通过 OpenAI 兼容接口）                  |
+| 向量嵌入 | sentence-transformers（BAAI/bge-small-zh-v1.5）          |
+| 文档导出 | python-docx（Word）、html2pdf.js（PDF）                  |
+| 部署     | Docker + nginx 反向代理                                  |
 
-### 多少时间
+## 3. 仓库结构
 
-2 周时间用来实现基本需求，在下方列出
-
-### 分工
-
-请你们提出一些意见，决定分工、技术栈，并尝试使用 Git 协作。
-
-我（组长）初步提出这样的分工结构：
-
-- 前端
-- 后端
-- 协调组（比如，基本的环境部署、测试等）
-
----
-
-## 1. 需要实现的需求（AI 整理后提炼要点）
-
-### 1.1 简历生成
-
-- 多模板提示词管理
-提供不少于5种简历风格（简约、商务、创意、学术、技术等），每种风格配套专用提示词模板，明确生成内容结构、语气、字数等约束。
-
-- 混合大模型调用
-支持接入 DeepSeek 与 Qwen 等系列模型 API，可根据任务类型、成本或响应速度动态路由，某模型不可用时自动切换备用模型。
-
-- 本地知识库检索增强（RAG）
-学生上传个人简历模板文档后，系统进行文本分块、向量嵌入并构建索引；生成简历时，系统以学生信息作为查询，检索最相关的片段作为上下文，提升生成内容的针对性与质量。
-
-- 结构化信息收集
-提供清晰友好的 Web 表单，分步采集个人基本信息、教育背景、实习/项目经历、获奖情况、技能、兴趣、求职意向等；支持上传已有数据文件进行预填充。
-
-- 个性化简历合成
-将用户信息、RAG 检索结果与所选模板提示词组合，发送至大模型生成 Markdown 格式简历，再经渲染引擎输出为符合常见排版规范的 PDF 或 Word 文档。
-
-### 1.2 文档管理
-
-- 在线预览
-生成完成后，学生可在网页内直接预览简历，兼容主流浏览器及移动设备，无需安装额外软件。
-
-- 知识库配置管理
-提供配置页面，学生可查看当前知识库的关键参数（如文本分块大小、重叠长度、检索返回数量、相似度阈值等），并可修改参数重新构建索引，以优化检索效果。
-
-- 文档下载
-支持将生成的简历下载保存为PDF或Word格式，方便直接用于求职投递，样式与原预览一致。
-
-### 1.3 非功能性需求
-
-- 性能
-  - 响应时间：从学生提交完整信息到生成最终简历文档，全流程耗时不超过 60 秒。
-  - 并发处理：系统支持至少 20 名学生同时使用，在高并发情况下故障率不超过 5%（即20个并发请求中失败请求 ≤1 个）。
-  - 吞吐能力：平稳支撑 20 QPS 的简历生成请求，无严重延迟累积。
-
-- 可靠性
-  - 关键服务采用集群或主备模式部署，大模型 API 调用失败自动重试（最多 2 次），向量数据库异常时启用备份索引。
-  - 使用缓存技术（如 Redis）缓存提示词模板、热门样式，降低重复计算开销。
-  - 具备任务队列机制，避免突发流量直接压垮后端推理服务。
-
-- 易用性
-  - 界面操作流程不超过 3 步即可完成简历生成。
-  - 知识库配置提供合理默认值，非必要无需手动调参，参数说明清晰易懂。
-
-- 安全性
-  - 学生个人信息在传输过程中使用 HTTPS 加密，存储时进行加密处理。
-  - 所有外部API密钥通过环境变量或密钥管理服务注入，不暴露在代码或配置文件中。
-
-- 可维护性
-  - 前后端分离，服务模块化，便于独立开发、测试和部署。
-  - 提示词模板、模型路由规则采用配置文件管理，支持热加载，无需重启服务即可更新。
-
-## 2. 技术栈、架构
-
-交付成果是一个前后端分离的 Web 应用，因此区分前后端。
-目前我已经敲定后端需要使用 Python 下的 FastAPI，Python 版本需要统一，这个需要确定。
-前端技术栈我不熟悉，得请有想法的同学提一提意见。
-项目结构我还在想，我尽快给出一个骨架方便开发的同学，或者直接从 GitHub 上 fork 一个可用的开源项目。
-
-## 3. 其他的事
-
-老师已经交代，我们需要自己准备一些 API Key 用于这个项目，学校方面暂时不能提供资源。
-至于服务端，我可以提供一个物理机器全天开机以供部署测试，但是如何广播到校内局域网我还在想。
-
-## 4. 初步分工、技术栈与架构（建议）
-
-### 建议分工（7 人）
-
-- **组长**: 负责合并 PR、代码审查、集成/回归测试、维护 `main` 分支与发布、搭建基础工程骨架（Docker、仓库结构）、整体协调与验收。
-- **后端 — AI 工程师**: 负责提示词设计、模型接入与路由（DeepSeek/Qwen 抽象层）、生成质量评估与成本控制。
-- **后端 — 服务层工程师**: 负责 `FastAPI` 服务实现、API 设计、数据库模型、与前端对接、数据迁移（`Alembic`）。
-- **后端 — 控制组件工程师**: 负责异步任务、队列与 Worker（`Celery`/`Redis`）、任务调度、重试与监控、导出流水线。
-- **前端（1 人）**: 负责前端实现、表单/模板/在线预览、与后端的集成。前端可选使用 Python 全栈方案以统一语言（如 Pynecone/Anvil/Flask+HTMX/PyScript），也可使用 `React` + `TypeScript`。
-- **模板与 UI 设计**: 负责 5 套简历模板的视觉/可打印样式（HTML/CSS/Markdown）、导出兼容性与样本填充。
-- **测试/运维（轻量）**: 负责 `Docker` 镜像与手动部署脚本、测试用例与压力测试。鉴于开发周期过短，不使用自动化 CI/CD，先采用手动构建与发布脚本。
-
-### 建议技术栈（按需替换，优先考虑快速交付）
-
-- **前端**: 优先 `Python` 全栈选项（如 Pynecone、Anvil、Flask + HTMX、或 PyScript）以实现前后端统一语言；如团队更擅长前端可选 `React` + `TypeScript` + `Vite`。样式可用 `Tailwind CSS` 或常规 CSS。
-- **后端**: `Python 3.11` + `FastAPI` + `Uvicorn`，ORM `SQLAlchemy` + `Alembic`。
-- **异步/队列**: `Celery` + `Redis`（任务：嵌入、索引重建、文档生成）。
-- **数据库**: `PostgreSQL`（用户、模板、元数据）。
-- **向量检索**: 开发/轻量 `Chroma` / `FAISS`，生产可迁移到 `Milvus` / `Weaviate`。
-- **对象存储**: `MinIO`（本地）或 `AWS S3`（云部署）。
-- **文档渲染**: Markdown → HTML（`Jinja2`）→ headless Chromium（`Playwright`）导出 PDF；DOCX 可用 `pandoc` / `python-docx`。
-- **容器/部署**: 使用 `Docker` 与 `docker-compose`（开发/测试），在组长提供的物理机或 VPS 上直接运行容器或进程；暂不使用 k8s。
-- **CI/CD（短期）**: 两周内采用手动构建与发布流程（脚本化 `deploy.sh`），日后再接入 `GitHub Actions`。
-- **测试/监控**: 单元 `pytest`；E2E `Playwright`；压力 `Locust`（可选）。监控可先用日志与简单指标。
-
-### 简要架构（高层）
-
-- **前端（单一页面或轻量服务）** ↔ **FastAPI（API 层）**：FastAPI 负责路由、鉴权、作业提交与状态查询、对外模型调用抽象。
-- **模型适配层**: 抽象 DeepSeek / Qwen 调用，统一超时/重试与降级策略。
-- **RAG 服务**: 文档上传 → 文本分块 → 嵌入生成 → 向量库索引 → 检索返回候选片段供模型上下文。
-- **Worker 池（控制组件负责）**: 异步处理嵌入、索引构建、Markdown→HTML→PDF/DOCX 渲染与导出。
-- **存储与缓存**: PostgreSQL（元数据）、对象存储（简历文件）、Redis（缓存和队列）。
-
-### 非功能性要点（调整后）
-
-- **性能**: 使用任务队列 + worker pool，前端以异步提交和轮询/WS 获取进度。目标尽量在 60s 内完成典型请求，20 并发为设计目标。
-- **可靠性**: 模型调用支持重试与降级；制作向量库快照以备份。
-- **安全（简化）**: 保证 HTTPS（TLS）传输；存储敏感数据时进行加密；API 密钥放置于环境变量或秘密管理，避免硬编码。
-- **可部署性**: 采用 `Docker` + `docker-compose` 或直接在组长提供的物理机上运行容器，暂不引入 k8s。
-
-### 团队协作与开发模式
-
-- 团队以组长持有的 GitHub 仓库为中心开展开发。
-- 组长选择传统的集成开发模式：持续在 `main` 分支上开发（要求每个小组在提交前内部沟通清楚、更改范围小、做好备份），以减少管理复杂度。
-- 建议约定提交信息规范、变更范围说明与每日短会或消息通报，避免覆盖冲突。
-
-## 5. 公告：两周冲刺 — 个人任务分配
-
-各位组员：为保证两周内交付并降低沟通成本，现将每位成员的具体任务明确如下（鼓励主动性与跨职能协作，但合并到 main 前请通知组长并确认本地/单元测试通过）——
-
-- **组长**: 负责最终合并与集成验收、维护 main 分支、搭建基础环境（Docker、仓库结构、deploy 脚本）、日常协调与里程碑把控。只做合并与基础搭建，不承担日常开发任务。
-- **后端 — AI 工程师**: 负责提示词设计与评估、模型接入抽象层（DeepSeek/Qwen）、路由/降级策略、成本控制与生成质量监控；提供模型测试接口与示例 prompt。
-- **后端 — 服务层工程师**: 负责 FastAPI 接口实现、数据库表与迁移脚本、API 文档、鉴权与输入校验、与 AI 层的对接及示例接口。
-- **后端 — 控制组件工程师**: 负责异步任务与 Worker 实现（Celery/Redis）、任务调度、重试/回退、Markdown→HTML→PDF/DOCX 的渲染流水线与日志/监控埋点。
-- **前端（1 人）**: 负责表单、模板选择、上传/预填充、在线预览与与后端接口的联调。可优先使用 Python 全栈方案以统一语言（团队同意时），若选择 React 等技术亦可。
-- **模板与 UI 设计**: 负责至少 5 套简历模板的视觉设计与可打印样式（响应式 & 打印一致性）、样本数据填充、导出兼容性测试与模板文档。
-- **测试/运维（轻量）**: 负责编写 Dockerfile 与 docker-compose、手动部署脚本（deploy.sh）、基本单元/集成测试（pytest）、并在必要时执行压力测试（Locust 简版）与运行验证。
-
-额外说明：
-
-- 时间与交付：两周为期，优先保证核心流程（表单→AI生成→预览→PDF导出）可端到端运行。
-- 合并与流程：采用组长集中合并到 main 的传统模式；每次推送前在团队群/看板说明改动范围与风险点。
-- 自主权与协作：鼓励大家主动提出改进、互相支援与领取额外任务；但重要改动（接口变更、数据库迁移、模板更改）必须提前通报并获得同意。
-- 反馈与确认：请各位在 24 小时内确认本分配或提出调整意见，确认后我会把此公告贴到仓库说明并生成对应的 Issue（如需我代为创建 Issue，请回复“创建 Issue”）。
-
----
-
-## 6. 从 0 到跑起来（Docker 超细步骤清单）
-
-> 目标：让任何成员在新机器上，用最少步骤把项目容器跑起来，并知道常用命令和排错顺序。
-
-### 6.1 安装 Docker（按系统）
-
-#### Windows 11
-
-1. 安装 Docker Desktop（官网安装包）。
-2. 安装过程中启用 WSL2（若提示）。
-3. 安装完成后重启电脑（建议）。
-4. 启动 Docker Desktop，状态显示 `Running` 再继续。
-
-#### Ubuntu
-
-1. 安装 Docker Engine 与 Compose 插件（`docker compose`）。
-2. 启动并检查 Docker 服务：
-
-```bash
-sudo systemctl status docker
+```text
+main           ← 项目文档（README、API 文档、协作指南）
+backend-dev    ← Python FastAPI 后端
+frontend-dev   ← Vue 3 + TypeScript 前端
 ```
 
-3. 如未运行，启动服务后重试：
+## 4. 快速启动
+
+### 4.1 后端
 
 ```bash
-sudo systemctl start docker
+git checkout backend-dev
+cd backend
+
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# 创建 .env
+cat > .env << 'EOF'
+LLM_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+LLM_API_KEY=sk-你的Key
+LLM_MODEL=qwen-plus
+EOF
+
+# 启动（默认端口 8000）
+./run.sh
+# 或直接: python -m uvicorn app.main:app --reload --port 8000
 ```
 
-### 6.2 安装后验证（必须通过）
+首次启动会自动下载 BGE 嵌入模型（约 100MB）。
+
+API 文档：<http://localhost:8000/docs>
+
+### 4.2 前端
 
 ```bash
-docker --version
-docker compose version
+git checkout frontend-dev
+cd frontend
+
+npm install
+npm run dev    # http://localhost:5173，自动代理 /api 到后端
 ```
 
-若命令报错，先不要继续，先修复 Docker 安装/服务状态。
-
-### 6.3 进入项目并准备配置
-
-1. 进入项目根目录（必须包含 `docker-compose.yml`）。
-2. 准备环境变量：
-   - 若有 `.env.example`，复制为 `.env`。
-   - 补齐数据库、端口、API Key 等必填项。
-3. 检查关键文件是否存在：
-   - `Dockerfile`
-   - `docker-compose.yml`
-   - `requirements.txt` 或 `package.json`（按项目实际）
-
-### 6.4 第一次构建并启动
+### 4.3 Docker 全栈部署
 
 ```bash
-docker compose up -d --build
+# 1. 启动后端
+cd backend
+docker build -t proj-backend .
+docker run -d --name proj_backend -p 8000:8000 -v backend_data:/app/data --env-file .env proj-backend
+
+# 2. 启动前端（含 nginx）
+cd ../frontend
+docker compose up --build -d
+# 访问 http://localhost:8080
 ```
 
-说明：
+| 地址                               | 说明                     |
+| ---------------------------------- | ------------------------ |
+| `http://localhost:8080`            | 前端页面                 |
+| `http://localhost:8080/api/health` | 后端健康检查（经 nginx） |
+| `http://localhost:8080/docs`       | Swagger 文档（经 nginx） |
+| `http://localhost:8000/api/health` | 直接访问后端             |
 
-- `--build`：强制先构建镜像；
-- `-d`：后台运行容器；
-- 首次运行较慢（拉镜像 + 装依赖）。
+## 5. 后端 API
 
-### 6.5 启动后健康检查
+所有接口挂在 `/api` 前缀下：
+
+| 方法   | 路径                                 | 说明                 |
+| ------ | ------------------------------------ | -------------------- |
+| GET    | `/api/health`                        | 健康检查             |
+| GET    | `/api/prompt-templates`              | 获取模板列表         |
+| GET    | `/api/knowledge-base/config`         | 知识库参数配置       |
+| GET    | `/api/knowledge-base/documents`      | 知识库文档列表       |
+| POST   | `/api/knowledge-base/documents`      | 上传知识库文档       |
+| DELETE | `/api/knowledge-base/documents/{id}` | 删除知识库文档       |
+| PUT    | `/api/knowledge-base/config`         | 更新知识库参数       |
+| POST   | `/api/generate-resume`               | 生成简历（SSE 流式） |
+| POST   | `/api/chat`                          | LLM 对话代理         |
+| GET    | `/api/export/docx/{id}`              | 导出 Word            |
+
+## 6. 前端路由
+
+| 路径        | 页面            |
+| ----------- | --------------- |
+| `/`         | 简历编辑与预览  |
+| `/template` | 模板市场        |
+| `/agent`    | AI 智能体工作台 |
+| `/setting`  | 网站配置        |
+| `/aiDeep`   | AI 深度交流     |
+
+## 7. 环境变量
+
+后端 `.env`（LLM 凭据统一由后端管理，前端不保存任何密钥）：
+
+| 变量           | 说明           | 默认值                  |
+| -------------- | -------------- | ----------------------- |
+| `LLM_API_URL`  | LLM API 地址   | —                       |
+| `LLM_API_KEY`  | API 密钥       | —                       |
+| `LLM_MODEL`    | 模型名称       | `qwen-plus`             |
+| `PORT`         | 服务端口       | `8000`                  |
+| `HOST`         | 绑定地址       | `127.0.0.1`             |
+| `CORS_ORIGINS` | 允许的跨域来源 | `http://localhost:5173` |
+
+支持的 LLM 提供商：阿里云 DashScope（Qwen）、DeepSeek、任何 OpenAI 兼容接口。模型调用 55 秒超时，失败自动降级到备用模型。
+
+## 8. 后端架构
+
+```text
+app/
+├── main.py              # FastAPI 入口，挂载路由 + CORS
+├── config.py            # 环境变量配置
+├── models/schemas.py    # Pydantic 数据模型
+├── routes/              # API 路由处理
+│   ├── health.py        # 健康检查
+│   ├── templates.py     # 模板 CRUD
+│   ├── knowledge_base.py # 知识库管理
+│   ├── resume.py        # 简历生成（SSE）
+│   ├── export.py        # 文档导出
+│   └── chat.py          # LLM 对话代理
+└── services/            # 业务逻辑
+    ├── llm_client.py    # LLM 抽象层（多提供商 + 降级）
+    ├── resume_generator.py  # 简历生成编排
+    ├── knowledge_base.py    # RAG 向量检索
+    ├── embedding_service.py # 嵌入服务
+    ├── docx_exporter.py     # Word 导出
+    ├── template_service.py  # 模板管理
+    └── document_parser.py   # PDF/DOCX 解析
+```
+
+## 9. 前端架构
+
+```text
+src/
+├── main.ts              # Vue 入口
+├── router/index.ts      # 路由定义
+├── store/               # Pinia 状态管理
+│   ├── useResumeStore.ts    # 简历数据
+│   └── useSettingsStore.ts  # 用户设置
+├── api/                 # 后端 API 封装
+├── views/               # 页面组件
+│   ├── resume/          # 简历编辑 + 预览
+│   ├── agent/           # AI 智能体工作台
+│   ├── aiDeep/          # AI 深度交流
+│   ├── template/        # 模板市场
+│   └── setting/         # 网站配置
+├── components/          # 公共组件
+├── worker/              # Web Worker（AI 流式处理）
+│   ├── aiWorker.ts      # SSE 流式通信
+│   └── workerPool.ts    # Worker 池管理
+└── template/            # 简历模板组件
+    ├── templateA/       # 简约校招版
+    ├── templateB/       # 商务正式版
+    ├── templateC/       # 创意亮点版
+    ├── templateD/       # 技术研发版
+    └── dev/             # 升学科研版
+```
+
+## 10. 常用命令速查
 
 ```bash
-docker compose ps
-docker compose logs -f
+# 后端
+cd backend
+./run.sh                                    # 启动开发服务器
+pytest test_api.py                          # 运行 API 测试
+python tests/load_test_generate.py          # 负载测试
+curl http://localhost:8000/api/health       # 健康检查
+
+# 前端
+cd frontend
+npm run dev                                 # 启动开发服务器
+npm run build                               # 生产构建
+npm run preview                             # 预览构建结果
+
+# Docker
+docker compose up --build -d                # 构建并启动
+docker compose logs -f                      # 查看日志
+docker compose down                         # 停止并清理
+docker compose exec api sh                  # 进入容器
 ```
-
-单服务排查（以 API 为例）：
-
-```bash
-docker compose logs -f api
-```
-
-再访问服务地址（示例）：
-
-- `http://localhost:8000/docs`
-
-### 6.6 高频命令速查
-
-```bash
-# 启动所有服务
-docker compose up -d
-
-# 停止服务（保留容器）
-docker compose stop
-
-# 停止并删除容器/网络
-docker compose down
-
-# 停止并删除容器/网络/卷（会清掉数据库数据）
-docker compose down -v
-
-# 重建并启动单个服务
-docker compose up -d --build api
-
-# 进入容器
-docker compose exec api sh
-
-# 查看镜像/容器
-docker images
-docker ps -a
-
-# 清理无用资源
-docker system prune
-```
-
-### 6.7 开发阶段建议
-
-- 代码改了但没热更新：重建对应服务（如 `api`）。
-- `.env` 变更后：重启相关容器。
-- 需要保留本地数据时，不要直接执行 `docker compose down -v`。
-- 所有密钥只放 `.env`，严禁写入代码或提交到仓库。
-
-### 6.8 排错顺序（按这 5 步走）
-
-1. **先看容器状态**
-
-```bash
-docker compose ps
-```
-
-确认是否有服务 `Exit`。
-
-2. **再看失败日志**
-
-```bash
-docker compose logs --tail=200 api
-```
-
-3. **对照常见错误定位**
-
-- 端口冲突：`address already in use` → 修改端口映射。
-- 环境变量缺失：`KeyError` / `None` → 检查 `.env` 变量名和值。
-- 数据库连不上：确认 `DB_HOST` 为服务名（如 `db`），不是 `localhost`。
-- 启动顺序问题：应用先起、数据库未就绪 → 增加等待或重试。
-- 权限问题（Linux）：当前用户无 Docker 权限或文件权限不足。
-- 镜像拉取失败：网络问题，重试或切换镜像源。
-
-4. **进入容器内复查环境**
-
-```bash
-docker compose exec api sh
-```
-
-检查环境变量、网络连通、依赖是否完整。
-
-5. **必要时干净重建**
-
-```bash
-docker compose down -v
-docker compose up -d --build
-```
-
-### 6.9 最短可执行路径（新成员直接照做）
-
-1. 安装 Docker 并通过版本验证。
-2. 进入项目目录并准备 `.env`。
-3. 执行 `docker compose up -d --build`。
-4. 执行 `docker compose ps` 与 `docker compose logs -f` 确认服务正常。
-5. 访问 `http://localhost:<映射端口>` 验证页面/API。
