@@ -1,110 +1,111 @@
-"""Local embedding service using sentence-transformers.
+"""Local embedding service using sentence-transformers (BGE small zh).
 
-Lazy-loaded singleton to avoid importing torch/st during module load.
+The model is warm-up loaded at application startup (lifespan) instead of on the
+first request, so the first user request never pays the cold-load cost. If the
+model cannot be loaded (not installed / offline / no cache), the service
+reports not-ready and retrieval transparently falls back to token-overlap.
 """
 
 from __future__ import annotations
 
 import logging
-import math
-from typing import List
+import threading
+from typing import List, Optional
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Model singleton
-# ---------------------------------------------------------------------------
+MODEL_NAME = "BAAI/bge-small-zh-v1.5"
+
 _model = None
-_model_name = "BAAI/bge-small-zh-v1.5"
+_model_lock = threading.Lock()
+_load_error: Optional[str] = None
 
-
-def _get_model():
-    """Lazy-load the sentence-transformers model."""
-    global _model
-    if _model is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as exc:
-            raise RuntimeError(
-                "sentence-transformers is not installed. "
-                'Run: pip install "sentence-transformers>=2.5.0"'
-            ) from exc
-        logger.info("Loading embedding model: %s", _model_name)
-        _model = SentenceTransformer(_model_name, device="cpu")
-        logger.info("Embedding model loaded.")
-    return _model
-
-
-# ---------------------------------------------------------------------------
-# Encoding
-# ---------------------------------------------------------------------------
-
-def encode_texts(texts: List[str], batch_size: int = 32) -> List[List[float]]:
-    """Encode a list of texts into dense embedding vectors.
-
-    Returns a list of float lists (one per input text).
-    """
-    if not texts:
-        return []
-
-    model = _get_model()
-    # normalize_embeddings=True gives unit vectors -> cosine = dot product
-    embeddings = model.encode(
-        texts,
-        batch_size=batch_size,
-        show_progress_bar=False,
-        convert_to_numpy=True,
-        normalize_embeddings=True,
-    )
-    return embeddings.tolist()
-
-
-# ---------------------------------------------------------------------------
-# Similarity
-# ---------------------------------------------------------------------------
-
-def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
-    """Cosine similarity between two unit vectors (or arbitrary vectors)."""
-    if len(vec_a) != len(vec_b):
-        raise ValueError("Vectors must have the same dimension")
-    # If vectors are already normalized (as we do in encode_texts),
-    # dot product == cosine similarity.
-    dot = sum(a * b for a, b in zip(vec_a, vec_b))
-    norm_a = math.sqrt(sum(a * a for a in vec_a)) or 1.0
-    norm_b = math.sqrt(sum(b * b for b in vec_b)) or 1.0
-    return dot / (norm_a * norm_b)
-
-
-def rank_by_similarity(
-    query_vec: List[float],
-    candidates: List[dict],
-    top_k: int = 5,
-) -> List[dict]:
-    """Rank candidate chunks by cosine similarity to query vector.
-
-    Each candidate must have an 'embedding' key with a list of floats.
-    Returns candidates sorted by similarity descending, capped at top_k.
-    """
-    scored = []
-    for item in candidates:
-        emb = item.get("embedding")
-        if not emb:
-            continue
-        score = cosine_similarity(query_vec, emb)
-        scored.append({**item, "score": score})
-
-    scored.sort(key=lambda x: x["score"], reverse=True)
-    return scored[:top_k]
-
-
-# ---------------------------------------------------------------------------
-# Health check
-# ---------------------------------------------------------------------------
 
 def is_available() -> bool:
-    """Return True if sentence-transformers can be imported."""
+    """True if sentence-transformers is importable (installed)."""
     try:
         import sentence_transformers  # noqa: F401
         return True
     except Exception:
         return False
+
+
+def is_ready() -> bool:
+    """True if the model is loaded and can encode right now."""
+    return _model is not None
+
+
+def load_error() -> Optional[str]:
+    return _load_error
+
+
+def warmup() -> None:
+    """Blocking model load; intended to run in a background thread at startup."""
+    global _model, _load_error
+    if _model is not None:
+        return
+    with _model_lock:
+        if _model is not None:
+            return
+        try:
+            from sentence_transformers import SentenceTransformer
+            logger.info("Loading embedding model: %s", MODEL_NAME)
+            _model = SentenceTransformer(MODEL_NAME, device="cpu")
+            logger.info("Embedding model loaded.")
+        except Exception as exc:
+            _load_error = str(exc)
+            logger.warning("Embedding model unavailable, vector retrieval disabled: %s", exc)
+
+
+def warmup_async() -> threading.Thread:
+    """Start warmup in a daemon thread and return it (used by app lifespan)."""
+    thread = threading.Thread(target=warmup, name="embedding-warmup", daemon=True)
+    thread.start()
+    return thread
+
+
+def encode_to_np(texts: List[str], batch_size: int = 32) -> np.ndarray:
+    """Encode texts into a (n, dim) float32 matrix of unit-normalized vectors."""
+    if not texts:
+        return np.zeros((0, 1), dtype=np.float32)
+    model = _get_model()
+    embeddings = model.encode(
+        texts,
+        batch_size=batch_size,
+        show_progress_bar=False,
+        convert_to_numpy=True,
+        normalize_embeddings=True,  # unit vectors -> cosine == dot product
+    )
+    return np.asarray(embeddings, dtype=np.float32)
+
+
+def encode_texts(texts: List[str], batch_size: int = 32) -> List[List[float]]:
+    """List-of-floats variant kept for compatibility with older callers."""
+    return encode_to_np(texts, batch_size).tolist()
+
+
+def _get_model():
+    if _model is None:
+        # Fall back to on-demand load (e.g. first request before warmup finishes)
+        warmup()
+        if _model is None:
+            raise RuntimeError(f"Embedding model not loaded: {_load_error or 'loading'}")
+    return _model
+
+
+def rank_by_similarity(
+    query_vec: np.ndarray,
+    candidate_matrix: np.ndarray,
+    top_k: int = 5,
+) -> List[tuple[int, float]]:
+    """Rank candidates by cosine similarity (all vectors unit-normalized).
+
+    Returns a list of (index, score) tuples sorted by score descending.
+    """
+    if candidate_matrix.size == 0:
+        return []
+    scores = candidate_matrix @ query_vec
+    order = np.argsort(-scores)[:top_k]
+    return [(int(i), float(scores[i])) for i in order]

@@ -1,5 +1,7 @@
 """Resume export endpoints."""
 
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
@@ -13,7 +15,9 @@ router = APIRouter()
 async def export_resume_docx(payload: GeneratedResumeData):
     """Export generated resume data as a .docx Word document."""
     try:
-        buf = build_resume_docx(payload)
+        buf = await asyncio.get_running_loop().run_in_executor(
+            None, build_resume_docx, payload
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"生成 Word 文件失败: {exc}") from exc
 

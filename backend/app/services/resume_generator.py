@@ -1,19 +1,20 @@
-"""Resume generator — local fallback + LLM-powered generation."""
+"""Resume generator — LLM-powered generation with local rule-based fallback."""
 
 from __future__ import annotations
 
 import json
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
-logger = logging.getLogger(__name__)
-
+from app.config import settings
 from app.models.schemas import (
     EducationItem,
     GeneratedResumeData,
+    GeneratedResumeMeta,
     GeneratedResumeResponse,
     HonorItem,
+    KnowledgeHit,
     PersonalInfo,
     ProjectItem,
     PromptTemplate,
@@ -22,6 +23,8 @@ from app.models.schemas import (
     WorkExperienceItem,
 )
 from app.services.llm_client import call_openai_compatible
+
+logger = logging.getLogger(__name__)
 
 
 def _ensure_array(value: Any) -> list:
@@ -62,9 +65,18 @@ def _build_prompt_payload(input_data: ResumeGenerateRequest, template: PromptTem
     }
 
 
-async def _call_llm(input_data: ResumeGenerateRequest, template: PromptTemplate, references: List[dict]) -> Dict[str, Any] | None:
-    import asyncio
+def _safe_id(value: Any, fallback: int) -> int:
+    """LLM sometimes returns string/None ids; never let that 500 the request."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
 
+
+async def _call_llm(
+    input_data: ResumeGenerateRequest, template: PromptTemplate, references: List[dict]
+) -> Tuple[Dict[str, Any] | None, str]:
+    """Returns (result, fallback_reason); result is None when falling back."""
     system_prompt = (
         f"{template.systemPrompt}\n"
         "你必须输出 JSON，字段结构为：personalInfo、education、workExperience、skills、projects、honors、summary。"
@@ -73,17 +85,17 @@ async def _call_llm(input_data: ResumeGenerateRequest, template: PromptTemplate,
     )
     user_prompt = json.dumps(_build_prompt_payload(input_data, template, references), ensure_ascii=False, indent=2)
 
+    if not settings.llm_api_url or not settings.llm_api_key:
+        return None, "LLM 未配置"
+
     try:
-        return await asyncio.wait_for(
-            call_openai_compatible(system_prompt, user_prompt),
-            timeout=55.0,
-        )
-    except asyncio.TimeoutError:
-        logger.warning("LLM call exceeded 55s, falling back to local generation")
-        return None
+        result = await call_openai_compatible(system_prompt, user_prompt)
     except Exception as exc:
         logger.warning("LLM call failed, falling back to local generation: %s", exc)
-        return None
+        return None, str(exc)
+    if result is None:
+        return None, "LLM 未配置"
+    return result, ""
 
 
 def _generate_local(input_data: ResumeGenerateRequest, template: PromptTemplate, references: List[dict]) -> GeneratedResumeData:
@@ -194,7 +206,7 @@ def _generate_local(input_data: ResumeGenerateRequest, template: PromptTemplate,
 
 
 def _normalize_llm_result(llm_result: dict) -> GeneratedResumeData:
-    """Normalize LLM output to match our schema."""
+    """Normalize LLM output to match our schema (defensive against junk)."""
     personal = llm_result.get("personalInfo", {}) if isinstance(llm_result.get("personalInfo"), dict) else {}
     return GeneratedResumeData(
         personalInfo=PersonalInfo(
@@ -212,7 +224,7 @@ def _normalize_llm_result(llm_result: dict) -> GeneratedResumeData:
         ),
         education=[
             EducationItem(
-                id=edu.get("id", index + 1),
+                id=_safe_id(edu.get("id"), index + 1),
                 school=edu.get("school", ""),
                 degree=edu.get("degree", ""),
                 major=edu.get("major", ""),
@@ -224,7 +236,7 @@ def _normalize_llm_result(llm_result: dict) -> GeneratedResumeData:
         ] or [EducationItem(id=1, school="", degree="", major="", startDate="", endDate="")],
         workExperience=[
             WorkExperienceItem(
-                id=we.get("id", 100 + index),
+                id=_safe_id(we.get("id"), 100 + index),
                 company=we.get("company", ""),
                 position=we.get("position", we.get("title", "")),
                 startDate=we.get("startDate", ""),
@@ -236,7 +248,7 @@ def _normalize_llm_result(llm_result: dict) -> GeneratedResumeData:
         ],
         skills=[
             SkillItem(
-                id=sk.get("id", 300 + index),
+                id=_safe_id(sk.get("id"), 300 + index),
                 skillName=sk.get("skillName", sk.get("name", ""))
             )
             for index, sk in enumerate(llm_result.get("skills") or [])
@@ -244,7 +256,7 @@ def _normalize_llm_result(llm_result: dict) -> GeneratedResumeData:
         ],
         projects=[
             ProjectItem(
-                id=pr.get("id", 200 + index),
+                id=_safe_id(pr.get("id"), 200 + index),
                 projectName=pr.get("projectName", pr.get("name", "")),
                 role=pr.get("role", ""),
                 startDate=pr.get("startDate", ""),
@@ -257,7 +269,7 @@ def _normalize_llm_result(llm_result: dict) -> GeneratedResumeData:
         ],
         honors=[
             HonorItem(
-                id=ho.get("id", 400 + index),
+                id=_safe_id(ho.get("id"), 400 + index),
                 honorName=ho.get("honorName", ho.get("name", "")),
                 date=ho.get("date", ""),
                 description=ho.get("description", ""),
@@ -274,7 +286,7 @@ async def generate_resume(
     template: PromptTemplate,
     references: List[dict],
 ) -> GeneratedResumeResponse:
-    llm_result = await _call_llm(input_data, template, references)
+    llm_result, fallback_reason = await _call_llm(input_data, template, references)
 
     if llm_result:
         resume_data = _normalize_llm_result(llm_result)
@@ -283,20 +295,19 @@ async def generate_resume(
         resume_data = _generate_local(input_data, template, references)
         provider = "local-fallback"
 
-    return GeneratedResumeResponse(
-        resumeData=resume_data,
-        meta={
-            "provider": provider,
-            "templateId": template.id,
-            "templateName": template.name,
-            "knowledgeHits": [
-                {
-                    "documentId": ref["documentId"],
-                    "documentName": ref["documentName"],
-                    "category": ref["category"],
-                    "score": round(ref["score"], 4),
-                }
-                for ref in references
-            ],
-        },
+    meta = GeneratedResumeMeta(
+        provider=provider,
+        templateId=template.id,
+        templateName=template.name,
+        knowledgeHits=[
+            KnowledgeHit(
+                documentId=ref["documentId"],
+                documentName=ref["documentName"],
+                category=ref["category"],
+                score=round(ref["score"], 4),
+            )
+            for ref in references
+        ],
+        fallbackReason="" if provider == "llm" else fallback_reason,
     )
+    return GeneratedResumeResponse(resumeData=resume_data, meta=meta)

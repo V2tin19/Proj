@@ -1,19 +1,34 @@
-"""Knowledge base endpoints."""
+"""Knowledge base endpoints.
+
+All blocking work (disk I/O, file parsing, embedding) runs in the default
+executor so the event loop stays responsive for SSE streams.
+"""
+
+from __future__ import annotations
 
 import asyncio
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
-from app.models.schemas import KnowledgeBaseConfig, KnowledgeBaseConfigUpdate, KnowledgeDocument, KnowledgeDocumentCreate
+from app.models.schemas import (
+    KnowledgeBaseConfig,
+    KnowledgeBaseConfigUpdate,
+    KnowledgeDocument,
+    KnowledgeDocumentCreate,
+)
 from app.services import knowledge_base as kb_service
 from app.services.document_parser import parse_file
 
 router = APIRouter()
 
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB
+ALLOWED_EXTENSIONS = (".docx", ".pdf", ".txt", ".md")
+
 
 @router.get("/knowledge-base/config", response_model=KnowledgeBaseConfig)
 async def get_knowledge_base_config():
-    return kb_service.get_config()
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, kb_service.get_config)
 
 
 @router.put("/knowledge-base/config", response_model=KnowledgeBaseConfig)
@@ -31,37 +46,44 @@ async def upload_knowledge_document(file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="缺少文件名")
 
+    lower_name = file.filename.lower()
+    if not lower_name.endswith(ALLOWED_EXTENSIONS):
+        raise HTTPException(
+            status_code=400,
+            detail="不支持的文件格式，仅支持 .docx / .pdf / .txt / .md",
+        )
+
+    if file.size is not None and file.size > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=400, detail="文件大小超过 20MB 限制")
+
     content = await file.read()
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="文件内容为空")
-    if len(content) > 20 * 1024 * 1024:
+    if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=400, detail="文件大小超过 20MB 限制")
 
+    def _parse_and_store() -> KnowledgeDocument:
+        _, text = parse_file(file.filename, content)  # raises ValueError for bad files
+        if not text.strip():
+            raise ValueError("未能从文件中提取到文本内容")
+        name = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
+        return kb_service.add_document(name, "文件上传", text)
+
+    loop = asyncio.get_running_loop()
     try:
-        _, text = parse_file(file.filename, content)
+        return await loop.run_in_executor(None, _parse_and_store)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"文件解析失败: {exc}") from exc
-
-    if not text.strip():
-        raise HTTPException(status_code=400, detail="未能从文件中提取到文本内容")
-
-    # 使用文件名（去掉扩展名）作为文档名称
-    name = file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        None,
-        kb_service.add_document,
-        name,
-        "文件上传",
-        text,
-    )
 
 
 @router.get("/knowledge-base/documents", response_model=list[KnowledgeDocument])
 async def get_knowledge_documents():
-    return kb_service.get_documents()
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, kb_service.get_documents)
 
 
 @router.post("/knowledge-base/documents", response_model=KnowledgeDocument, status_code=201)

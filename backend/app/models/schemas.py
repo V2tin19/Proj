@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, List, Literal, Optional
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class PromptTemplate(BaseModel):
@@ -27,8 +27,8 @@ class KnowledgeBaseConfigUpdate(BaseModel):
     chunkSize: int = Field(..., ge=50, le=2000)
     chunkOverlap: int = Field(..., ge=0, le=500)
     retrievalTopK: int = Field(..., ge=1, le=100)
-    matchAlgorithm: str = Field(..., min_length=1, max_length=100)
-    embeddingProvider: str = Field(..., min_length=1, max_length=100)
+    matchAlgorithm: Literal["token-overlap", "vector-cosine"]
+    embeddingProvider: Literal["local"]
 
 
 class KnowledgeDocument(BaseModel):
@@ -99,6 +99,13 @@ class ResumeGenerateRequest(BaseModel):
     projectExperiences: List[StudentProjectInput] = []
 
 
+def _none_to_empty(v: Any, info: ValidationInfo) -> Any:
+    """LLM/前端数据里显式 null 一律按空串处理,避免校验 500。"""
+    if v is None and info.field_name != "id":
+        return ""
+    return v
+
+
 class PersonalInfo(BaseModel):
     name: str = ""
     gender: str = ""
@@ -112,6 +119,8 @@ class PersonalInfo(BaseModel):
     applicationPosition: str = ""
     age: str = ""
 
+    _coerce = field_validator("*", mode="before")(_none_to_empty)
+
 
 class EducationItem(BaseModel):
     id: int
@@ -120,6 +129,8 @@ class EducationItem(BaseModel):
     major: str = ""
     startDate: str = ""
     endDate: str = ""
+
+    _coerce = field_validator("*", mode="before")(_none_to_empty)
 
 
 class WorkExperienceItem(BaseModel):
@@ -130,10 +141,14 @@ class WorkExperienceItem(BaseModel):
     endDate: str = ""
     description: str = ""
 
+    _coerce = field_validator("*", mode="before")(_none_to_empty)
+
 
 class SkillItem(BaseModel):
     id: int
     skillName: str = ""
+
+    _coerce = field_validator("*", mode="before")(_none_to_empty)
 
 
 class ProjectItem(BaseModel):
@@ -145,12 +160,16 @@ class ProjectItem(BaseModel):
     briefIntroduction: str = ""
     description: str = ""
 
+    _coerce = field_validator("*", mode="before")(_none_to_empty)
+
 
 class HonorItem(BaseModel):
     id: int
     honorName: str = ""
     date: str = ""
     description: str = ""
+
+    _coerce = field_validator("*", mode="before")(_none_to_empty)
 
 
 class GeneratedResumeData(BaseModel):
@@ -170,13 +189,21 @@ class KnowledgeHit(BaseModel):
     score: float
 
 
+class GeneratedResumeMeta(BaseModel):
+    provider: Literal["llm", "local-fallback"]
+    templateId: str
+    templateName: str
+    knowledgeHits: List[KnowledgeHit] = []
+    fallbackReason: str = ""
+
+
 class GeneratedResumeResponse(BaseModel):
     resumeData: GeneratedResumeData
-    meta: dict
+    meta: GeneratedResumeMeta
 
 
 class ChatMessage(BaseModel):
-    role: str
+    role: Literal["system", "user", "assistant"]
     content: str
 
 
@@ -189,3 +216,5 @@ class HealthResponse(BaseModel):
     ok: bool
     now: str
     provider: str
+    embedding: str = "unknown"
+    auth: str = "disabled"

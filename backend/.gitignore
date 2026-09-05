@@ -49,3 +49,7 @@ Thumbs.db
 data/vector-store.json
 
 .claude
+# SQLite 运行时数据库
+data/kb.sqlite3
+data/kb.sqlite3-wal
+data/kb.sqlite3-shm
