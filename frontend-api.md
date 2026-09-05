@@ -34,6 +34,8 @@
 - **超时设置**：请求超时时间为 60 秒
 - **字符编码**：UTF-8
 - **Content-Type**：`application/json`（文件上传除外）
+- **访问控制**：后端设置 `ACCESS_CODE` 后,除 `GET /api/health` 外的所有接口需携带请求头 `X-Access-Code`(前端在「网站配置」页填入一次,由 axios 拦截器与 Web Worker 自动注入)
+- **限流**:`/api/chat` 与 `/api/generate-resume` 默认每 IP 每分钟 30 次,超限返回 `429`
 
 ### 错误处理
 
@@ -44,6 +46,7 @@
 | 400    | 请求参数错误   | 请求体格式错误或缺少必填字段 |
 | 401    | 认证失败       | API Key 无效或未配置         |
 | 404    | 资源不存在     | 接口路径错误或资源已被删除   |
+| 429    | 限流           | 生成/对话请求过于频繁        |
 | 500    | 服务器内部错误 | 后端服务异常                 |
 
 ---
@@ -68,7 +71,7 @@ GET /api/health
 {
   "ok": true,
   "now": "2026-06-14T21:00:00Z",
-  "provider": "dashscope"
+  "provider": "llm-configured"
 }
 ```
 
@@ -272,8 +275,8 @@ GET /api/knowledge-base/config
   "chunkSize": 500,
   "chunkOverlap": 50,
   "retrievalTopK": 3,
-  "matchAlgorithm": "cosine",
-  "embeddingProvider": "dashscope"
+  "matchAlgorithm": "token-overlap",
+  "embeddingProvider": "local"
 }
 ```
 
@@ -307,8 +310,8 @@ Content-Type: application/json
   "chunkSize": 600,
   "chunkOverlap": 100,
   "retrievalTopK": 5,
-  "matchAlgorithm": "cosine",
-  "embeddingProvider": "dashscope"
+  "matchAlgorithm": "token-overlap",
+  "embeddingProvider": "local"
 }
 ```
 
@@ -389,7 +392,7 @@ Content-Type: application/json
 | 字段       | 类型   | 必填 | 说明     |
 | ---------- | ------ | ---- | -------- |
 | `name`     | string | ✅    | 文档名称 |
-| `category` | string | ✅    | 文档分类 |
+| `category` | string | ❌    | 文档分类(可选,默认"未分类") |
 | `content`  | string | ✅    | 文档内容 |
 
 #### 响应
@@ -575,7 +578,7 @@ Content-Type: application/json
 | 字段            | 类型    | 必填 | 说明                            |
 | --------------- | ------- | ---- | ------------------------------- |
 | `templateId`    | string  | ✅    | 选择的模板 ID                   |
-| `enableRag`     | boolean | ❌    | 是否启用 RAG 功能，默认 `false` |
+| `enableRag`     | boolean | ❌    | 是否启用 RAG 功能，默认 `true` |
 | `retrievalTopK` | number  | ❌    | RAG 检索的文档数量，默认 `3`    |
 | `wordCount`     | number  | ❌    | 期望的简历字数                  |
 
@@ -716,7 +719,7 @@ Content-Type: application/json
 
 | 字段                           | 类型   | 说明                 |
 | ------------------------------ | ------ | -------------------- |
-| `provider`                     | string | AI 服务提供商        |
+| `provider`                     | string | `"llm"` — LLM 生成;`"local-fallback"` — 本地规则降级(原因见 `fallbackReason`) |
 | `templateId`                   | string | 使用的模板 ID        |
 | `templateName`                 | string | 模板名称             |
 | `knowledgeHits`                | array  | RAG 检索到的相关文档 |

@@ -1,9 +1,17 @@
-# 部署说明
+# 部署说明(后端单机/本地开发参考)
+
+> **全栈部署已统一到仓库根目录**:优先使用根目录 `docker compose up -d --build`(见根 README)。
+> 本文仅覆盖后端单独部署/本地开发。
+>
+> **重要更正**:本服务应**单实例运行**(容器内单 uvicorn 进程)。SQLite(WAL)+ 启动预热模型
+> 的配置以单实例为准,不要按旧版建议使用 gunicorn -w 多 worker(会重复加载模型且无收益);
+> 数据请务必挂载卷持久化:`-v backend_data:/app/data`。
 
 ## 环境要求
 
-- Python 3.10+
-- `sentence-transformers` 首次启动时会自动下载 `BAAI/bge-small-zh-v1.5` 模型（约 100MB）
+- Python 3.11+(自建虚拟环境)
+- `sentence-transformers` 的 BGE 模型在应用启动时后台预热;Docker 镜像构建期已预下载,
+  本地运行首次会自动下载(约 100MB,可用 `HF_ENDPOINT` 指向镜像加速)
 
 ## 1. 安装依赖
 
@@ -41,27 +49,31 @@ HOST=0.0.0.0
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## 4. 多 Worker 生产模式（推荐）
-
-使用 `--workers` 启动多个进程，提升并发处理能力：
+## 4. 生产模式(单实例)
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-> 建议 Worker 数量 = `CPU 核心数 + 1`
+> 应用内已用线程池承载阻塞操作,单实例即可高效处理并发;多进程会重复加载嵌入模型且
+> 与 SQLite 单写者语义不匹配,**不要**使用 `--workers`/gunicorn 多 worker。
 
-## 5. Gunicorn 部署（更稳定）
+## 5. 容器部署(推荐)
 
 ```bash
-pip install gunicorn
+# 仓库根目录
+docker compose up -d --build backend
+```
 
-gunicorn app.main:app \
-  -w 4 \
-  -k uvicorn.workers.UvicornWorker \
-  --bind 0.0.0.0:8000 \
-  --timeout 120 \
-  --access-logfile -
+或单独构建:
+
+```bash
+docker build -t ai-resume-backend .
+docker run -d --name proj_backend \
+  -p 8000:8000 \
+  -v backend_data:/app/data \
+  --env-file ../.env \
+  ai-resume-backend
 ```
 
 ## 6. LLM 服务拆分（高并发场景）

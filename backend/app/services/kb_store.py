@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
+import threading
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -55,9 +56,18 @@ CREATE TABLE IF NOT EXISTS config (
 """
 
 
+_init_lock = threading.Lock()
+_initialized = False
+
+
 @contextmanager
 def _connect() -> Iterator[sqlite3.Connection]:
-    """Open a short-lived connection. WAL journal is set once per database file."""
+    """Open a short-lived connection; schema is created on first use.
+
+    WAL journal is applied per connection (cheap, idempotent). Self-init makes
+    the store resilient even if the database file disappears at runtime.
+    """
+    global _initialized
     path = settings.kb_db_path
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=30.0)
@@ -65,6 +75,11 @@ def _connect() -> Iterator[sqlite3.Connection]:
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
         conn.execute("PRAGMA busy_timeout=30000")
+        if not _initialized:
+            with _init_lock:
+                if not _initialized:
+                    conn.executescript(_SCHEMA)
+                    _initialized = True
         yield conn
         conn.commit()
     except Exception:

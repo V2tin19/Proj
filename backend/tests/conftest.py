@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 def isolate_data_dir(tmp_path, monkeypatch):
     """Point every test at a throwaway data directory (seed templates copied in)."""
     from app.config import settings
+    from app.services import kb_store
 
     data_dir = tmp_path / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -30,6 +31,8 @@ def isolate_data_dir(tmp_path, monkeypatch):
     for seed in seeds:
         (data_dir / seed.name).write_bytes(seed.read_bytes())
     monkeypatch.setattr(settings, "data_dir", data_dir)
+    # 每个 test 独立数据库文件,重置 schema 初始化标志
+    monkeypatch.setattr(kb_store, "_initialized", False)
     yield data_dir
 
 

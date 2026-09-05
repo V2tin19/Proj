@@ -59,9 +59,24 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # ------------------------------------------------------------------
-    # 数据目录(测试可覆盖;Docker 中挂载命名卷到 /app/data)
+    # 数据目录(测试可覆盖;发行包中为包根下 data/)
     # ------------------------------------------------------------------
     data_dir: Path = BASE_DIR / "data"
+
+    # ------------------------------------------------------------------
+    # 前端静态产物目录(留空自动探测:发行包 static/ 或开发仓 frontend/dist)
+    # ------------------------------------------------------------------
+    static_dir: str = ""
+
+    @property
+    def resolved_static_dir(self) -> Path | None:
+        if self.static_dir:
+            path = Path(self.static_dir)
+            return path if path.is_dir() else None
+        for candidate in (BASE_DIR / "static", BASE_DIR.parent / "frontend" / "dist"):
+            if (candidate / "index.html").is_file():
+                return candidate
+        return None
 
     @property
     def cors_origin_list(self) -> list[str]:

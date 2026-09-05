@@ -99,3 +99,45 @@ class TestRetrieval:
         assert len(docs) == 1 and docs[0].id == "doc-legacy"
         # 第二次调用不重复导入
         assert kb_store.migrate_from_json() == 0
+
+
+class TestVectorPathWithFakeEmbeddings:
+    """用确定性假嵌入验证 SQLite 向量链路(存储/批量点积/降级),无需真实模型。"""
+
+    def _fake_vectors(self, texts):
+        import numpy as np
+        vectors = []
+        for text in texts:
+            vec = np.zeros(16, dtype=np.float32)
+            for i, ch in enumerate(text[:16]):
+                vec[i % 16] += (ord(ch) % 7) / 7.0
+            norm = np.linalg.norm(vec) or 1.0
+            vectors.append(vec / norm)
+        return np.stack(vectors)
+
+    def test_vector_retrieval_roundtrip(self, monkeypatch):
+        from app.services import embedding_service
+
+        monkeypatch.setattr(embedding_service, "is_ready", lambda: True)
+        monkeypatch.setattr(embedding_service, "encode_to_np", self._fake_vectors)
+
+        kb.update_config(
+            KnowledgeBaseConfig(
+                chunkSize=300,
+                chunkOverlap=50,
+                retrievalTopK=3,
+                matchAlgorithm="vector-cosine",
+                embeddingProvider="local",
+            )
+        )
+        kb.add_document("Java 面经", "技术岗", "Java 后端开发需要掌握 Spring Boot 与 MySQL 索引优化。")
+        kb.add_document("前端指南", "技术岗", "前端开发需要熟悉 Vue3 与 TypeScript 工程化。")
+
+        hits = kb.retrieve_context("Java 后端开发需要掌握 Spring Boot 与 MySQL 索引优化。")
+        assert hits, "向量检索应命中"
+        assert hits[0]["documentName"] == "Java 面经"
+        assert 0 < hits[0]["score"] <= 1.0001
+
+        # 相似文本的向量应比无关文本更接近
+        unrelated = kb.retrieve_context("Vue3 TypeScript 工程化 前端")
+        assert unrelated[0]["documentName"] == "前端指南"

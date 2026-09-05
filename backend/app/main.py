@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 
 load_dotenv()  # must run before app.config reads env vars
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.config import settings
 from app.middleware import AccessCodeMiddleware, RateLimitMiddleware
@@ -64,9 +65,42 @@ app.include_router(export.router, prefix="/api", tags=["Export"])
 app.include_router(chat.router, prefix="/api", tags=["Chat Proxy"])
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
+    static = settings.resolved_static_dir
+    if static is not None:
+        return FileResponse(static / "index.html")
     return {"message": "AI Resume Backend is running", "docs": "/docs"}
+
+
+# ---------------------------------------------------------------------------
+# 前端静态托管(SPA):发行包/单机部署时由后端直接服务前端产物,
+# 单端口 8000 即可,无需 nginx/Node。/api 与 /docs 等具体路由优先匹配;
+# 未知路径回退 index.html(history 路由刷新不 404)。
+# ---------------------------------------------------------------------------
+@app.get("/{full_path:path}", include_in_schema=False)
+async def spa_fallback(full_path: str):
+    static = settings.resolved_static_dir
+    if static is None:
+        raise HTTPException(status_code=404, detail="前端静态资源未部署(未找到 index.html)")
+
+    if full_path == "api" or full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    candidate = (static / full_path).resolve()
+    if (
+        full_path
+        and str(candidate).startswith(str(static.resolve()))
+        and candidate.is_file()
+    ):
+        return FileResponse(candidate)
+
+    # 带扩展名的路径视为静态资源请求,缺失时 404,不回退 index.html
+    if "." in full_path.rsplit("/", 1)[-1]:
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    index = static / "index.html"
+    return FileResponse(index)
 
 
 if __name__ == "__main__":

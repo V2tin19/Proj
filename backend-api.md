@@ -4,6 +4,9 @@
 >
 > **所有接口前缀**：`/api`
 >
+> **访问控制**：后端设置环境变量 `ACCESS_CODE` 后,除 `GET /api/health` 外的所有接口
+> 必须携带请求头 `X-Access-Code: <访问口令>`,否则返回 `401`。前端在「网站配置」页填入一次即可。
+>
 > **交互式文档**：启动服务后访问 `http://localhost:8000/docs`（Swagger UI），可在线调试所有接口
 
 ---
@@ -50,7 +53,9 @@
 {
   "ok": true,
   "now": "2026-06-14T10:30:00.000000+00:00",
-  "provider": "llm-configured"
+  "provider": "llm-configured",
+  "embedding": "ready",
+  "auth": "enabled"
 }
 ```
 
@@ -59,6 +64,8 @@
 | `ok`       | bool   | 始终为 `true`（服务挂了就不会返回了）                                                                              |
 | `now`      | string | 当前 UTC 时间（ISO 8601）                                                                                          |
 | `provider` | string | `"llm-configured"` — LLM 已配置，可正常使用 AI 功能；`"local-fallback"` — 未配置 LLM，生成简历时将使用本地规则降级 |
+| `embedding` | string | `"ready"` — 嵌入模型已就绪；`"loading"` — 后台加载中；`"not-installed"` / `"unavailable: ..."` — 向量检索不可用（自动降级关键词检索） |
+| `auth`     | string | `"enabled"` — 已启用访问口令；`"disabled"` — 未启用 |
 
 ---
 
@@ -293,6 +300,7 @@
 | `meta.templateId`           | string | 实际使用的模板 ID                                                         |
 | `meta.templateName`         | string | 实际使用的模板名称                                                        |
 | `meta.knowledgeHits`        | array  | RAG 检索命中的知识库文档（`enableRag=false` 时为空数组）                  |
+| `meta.fallbackReason`       | string | 仅 `provider="local-fallback"` 时有值：降级的具体原因（超时/未配置/解析失败等） |
 
 **错误响应**
 
@@ -301,7 +309,7 @@
 | `400`  | 没有可用的模板（模板数据为空） |
 | `500`  | 服务内部错误                   |
 
-> **降级机制**：当 LLM 超时（55 秒）或调用失败时，系统不会报错，而是自动降级到本地规则生成简历。通过 `meta.provider` 字段可以判断实际使用了哪种方式。前端可以根据此字段决定是否提示用户"AI 生成暂不可用"。
+> **降级机制**：当 LLM 超时（55 秒）或调用失败时，系统不会报错，而是自动降级到本地规则生成简历。通过 `meta.provider` 字段可以判断实际使用了哪种方式，`meta.fallbackReason` 给出降级原因。前端可以根据此字段决定是否提示用户"AI 生成暂不可用"。
 
 ---
 
@@ -354,6 +362,8 @@ URL.revokeObjectURL(url);  // 释放内存
 ## 6. 知识库管理
 
 知识库用于 RAG（检索增强生成）——在生成简历时，系统会从知识库中检索相关内容作为参考，让 LLM 生成更专业的简历。
+
+> **存储**：知识库文档、分块与向量统一存放在 SQLite（`data/kb.sqlite3`,WAL 模式）,支持并发写入与容器化持久卷;旧版 JSON 数据在首次启动时自动迁移。
 
 ### 6.1 获取知识库配置
 
@@ -545,14 +555,15 @@ data: [DONE]
 
 每个 `data:` 行是一段增量文本。`data: [DONE]` 表示生成结束。
 
-> **前端处理建议**：使用 `EventSource` 或 `fetch` + `ReadableStream` 读取流式响应。收到 `data: [DONE]` 时关闭连接。注意 SSE 数据中的换行会被转义为 `\ndata:` 前缀，需要拼接还原。
+> **前端处理建议**：使用 `fetch` + `ReadableStream` 读取流式响应,按 SSE 规范以空行分隔事件、同一事件内多行 `data:` 用换行符还原(后端把增量内换行转义为续行)。收到 `data: [DONE]` 时关闭连接。所有错误(未配置/鉴权失败/上游错误/超时)都会在流开始**之前**以对应 HTTP 状态码返回,不会出现 200 + 空流。使用 `EventSource` 或 `fetch` + `ReadableStream` 读取流式响应。收到 `data: [DONE]` 时关闭连接。注意 SSE 数据中的换行会被转义为 `\ndata:` 前缀，需要拼接还原。
 
 **错误响应**
 
 | 状态码 | 场景                                                                      |
 | ------ | ------------------------------------------------------------------------- |
-| `400`  | 请求格式错误（如 `messages` 为空）                                        |
-| `401`  | API Key 无效或已过期                                                      |
+| `401`  | 访问口令缺失或不正确（`ACCESS_CODE` 已启用时）；上游 API Key 无效也返回 401 |
+| `422`  | 请求格式错误（如 `messages` 为空、role 非法）                             |
+| `429`  | 触发限流（默认每 IP 每分钟 30 次,可通过 `RATE_LIMIT_PER_MINUTE` 调整）    |
 | `502`  | 后端未配置 LLM（缺少 `LLM_API_URL` / `LLM_API_KEY`），或上游 API 返回错误 |
 | `502`  | 无法连接到上游 LLM API（网络问题或地址错误）                              |
 | `504`  | 连接上游 LLM API 超时（120 秒）                                           |
@@ -569,6 +580,8 @@ data: [DONE]
 | `PORT`             | —                           | `8000`                                        | 服务端口                                        |
 | `HOST`             | —                           | `127.0.0.1`                                   | 服务监听地址                                    |
 | `CORS_ORIGINS`     | —                           | `http://localhost:5173,http://127.0.0.1:5173` | 允许的跨域来源，逗号分隔                        |
+| `ACCESS_CODE`      | —                           | 空                                            | 访问口令;设置后业务接口要求 `X-Access-Code` 头 |
+| `RATE_LIMIT_PER_MINUTE` | —                      | `30`                                          | 生成/对话接口每 IP 每分钟限流次数              |
 | `CHAT_TEMPERATURE` | —                           | `0.7`                                         | Chat 接口的 LLM 温度参数（0.0-2.0，越高越随机） |
 
 > **关于别名**：每个变量同时支持主名称和别名，优先使用主名称。例如设置 `LLM_API_URL` 或 `OPENAI_COMPATIBLE_API_URL` 效果相同，方便从 OpenAI SDK 项目迁移。

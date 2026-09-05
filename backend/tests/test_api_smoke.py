@@ -28,7 +28,9 @@ class TestHealth:
     def test_root(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
-        assert resp.json()["docs"] == "/docs"
+        # 开发仓存在 frontend/dist 时根路径服务前端;否则返回 API JSON
+        body = resp.text
+        assert ("docs" in body) or ("<html" in body.lower())
 
 
 class TestTemplates:
