@@ -34,6 +34,7 @@ done
 # ---------- 前置自检(全部本地资产) ----------
 PY_REAL="$(readlink -f "$BACKEND/.venv/bin/python")"
 PY_MAJOR_MIN="$( "$PY_REAL" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+VENV_SITE="$BACKEND/.venv/lib/python$PY_MAJOR_MIN/site-packages"
 PY_LIB_DIR="$(dirname "$(dirname "$PY_REAL")")/lib/python$PY_MAJOR_MIN"
 if [ ! -d "$PY_LIB_DIR" ]; then
   # Debian/Ubuntu:标准库在 /usr/lib/pythonX.Y
@@ -49,7 +50,6 @@ if [ ! -f "$ROOT/frontend/dist/index.html" ]; then
   echo "错误: 缺少 frontend/dist/index.html — 请先在开发机执行 npm run build" >&2
   exit 1
 fi
-
 VARIANT=$([ "$FULL" = 1 ] && echo full || echo lite)
 ARCH="$(uname -m)"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -60,12 +60,13 @@ echo "== 构建发行包: $NAME =="
 mkdir -p "$STAGE"/{app,static,runtime/bin,runtime/lib,data,deploy}
 
 # ---------- 1) 后端源码 + 种子数据 ----------
-cp -r "$BACKEND/app" "$STAGE/app"
+# -T:把源目录内容作为目标目录本身,避免目标已存在时产生嵌套
+cp -rT "$BACKEND/app" "$STAGE/app"
 cp "$BACKEND"/data/*.json "$STAGE/data/"
 # ---------- 2) 前端构建产物 ----------
-cp -r "$ROOT/frontend/dist" "$STAGE/static"
+cp -rT "$ROOT/frontend/dist" "$STAGE/static"
 # ---------- 3) 部署脚本与配置模板 ----------
-cp -r "$ROOT/deploy" "$STAGE/deploy"
+cp -rT "$ROOT/deploy" "$STAGE/deploy"
 cp "$ROOT/.env.example" "$STAGE/.env.example"
 cp "$ROOT/deploy/README-DEPLOY.md" "$STAGE/README-DEPLOY.md"
 
@@ -79,9 +80,11 @@ LDPY="$(ldd "$PY_REAL" 2>/dev/null | grep -oE '/[^ ]*libpython[0-9.]*\.so[^ ]*' 
 mkdir -p "$STAGE/runtime/lib"
 [ -n "$LDPY" ] && cp -L "$LDPY" "$STAGE/runtime/lib/" && echo "   含动态库: $(basename "$LDPY")"
 
-# site-packages:从 venv 拷贝
+# site-packages:从 venv 拷贝。
+# 注意:Debian 系解释器的 site.py 将第三方目录改为 dist-packages(已实测),
+# 因此目录名跟随运行时实际期望,否则依赖不会被加入 sys.path。
 echo "== 拷贝依赖(可能需要 1-2 分钟)=="
-SITE_TARGET="$STAGE/runtime/lib/python$PY_MAJOR_MIN/site-packages"
+SITE_TARGET="$STAGE/runtime/lib/python$PY_MAJOR_MIN/dist-packages"
 mkdir -p "$SITE_TARGET"
 cp -r "$VENV_SITE"/* "$SITE_TARGET"/
 
