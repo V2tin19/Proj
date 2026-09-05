@@ -1,0 +1,39 @@
+# AI 简历生成器 — 统一编排(前端静态站 + nginx 反代 + FastAPI 后端)
+# 用法:
+#   cp .env.example .env   # 填入 LLM_API_URL / LLM_API_KEY(可选 ACCESS_CODE)
+#   docker compose up -d --build
+#   访问 http://localhost:8080
+services:
+  backend:
+    build: ./backend
+    container_name: proj_backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8000"
+    volumes:
+      # 知识库 SQLite 与配置持久化在命名卷,容器重建不丢数据
+      - backend_data:/app/data
+    networks:
+      - proj_net
+    # 健康检查定义在 backend/Dockerfile 的 HEALTHCHECK
+
+  web:
+    build: ./frontend
+    container_name: proj_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - proj_net
+
+volumes:
+  backend_data:
+
+networks:
+  proj_net:
+    driver: bridge

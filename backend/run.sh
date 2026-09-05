@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 启动 FastAPI 后端服务
-# 用法: ./run.sh          # 默认端口 8000
-# 用法: PORT=3001 ./run.sh # 指定端口（与前端正端代理保持一致）
+# 用法: ./run.sh            # 默认端口 8000(与前端 vite 代理一致)
+# 用法: PORT=9000 ./run.sh  # 指定端口
 
 set -e
 

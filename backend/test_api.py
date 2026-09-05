@@ -7,7 +7,7 @@ import httpx
 
 import os
 
-BASE_URL = os.getenv("API_BASE_URL", "http://localhost:3001")
+BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 client = httpx.Client(base_url=BASE_URL, timeout=30)
 
 passed = 0

@@ -1,8 +1,11 @@
 # AI Resume Frontend
 
-Vue 3 + Vite 构建的简历生成前端，通过 nginx 反向代理连接后端 FastAPI 服务。
+Vue 3 + Vite 构建的简历生成前端,构建产物由 nginx 服务,并将 `/api` 反向代理到后端 FastAPI。
 
-**核心功能**：简历编辑与预览、AI 智能体生成、知识库管理、PDF/Word 导出。
+**核心功能**:简历编辑与预览、AI 智能体生成、知识库管理、PDF/Word 导出。
+
+> **部署已统一到仓库根目录**:全栈启动请回到仓库根目录使用 `docker compose up -d --build`(见根 README)。
+> 本目录说明前端本地开发与镜像构建。
 
 ---
 
@@ -10,7 +13,7 @@ Vue 3 + Vite 构建的简历生成前端，通过 nginx 反向代理连接后端
 
 1. [环境要求](#1-环境要求)
 2. [本地开发](#2-本地开发)
-3. [Docker 部署](#3-docker-部署)
+3. [镜像构建](#3-镜像构建)
 4. [项目结构](#4-项目结构)
 
 ---
@@ -19,131 +22,36 @@ Vue 3 + Vite 构建的简历生成前端，通过 nginx 反向代理连接后端
 
 | 依赖 | 最低版本 |
 |------|---------|
-| Node.js | 18 |
+| Node.js | 18(建议 20) |
 | npm | 9 |
-| Docker | 20.10+（部署用） |
+| Docker | 20.10+(部署用) |
 
 ---
 
 ## 2. 本地开发
 
 ```bash
-# 安装依赖
-npm install
+# 安装依赖(项目本地 node_modules,不影响全局)
+npm ci
 
-# 启动开发服务器
+# 启动开发服务器(需后端先在本机 8000 端口运行)
 npm run dev
 ```
 
-> 开发时前端代理配置在 `vite.config.ts` 中，默认转发 `/api` 到 `http://127.0.0.1:3001`。
+> 开发时前端代理配置在 `vite.config.ts` 中,默认转发 `/api` 到 `http://127.0.0.1:8000`。
 
 ---
 
-## 3. Docker 部署
+## 3. 镜像构建
 
-### 3.1 前置条件
-
-确保后端 FastAPI 服务已启动，默认期望后端在 **本机 8000 端口** 运行。
-
-如果后端部署在其他机器，修改 `nginx/conf.d/default.conf` 中的 `proxy_pass` 地址。
-
-### 3.2 快速启动
+`Dockerfile` 为多阶段构建:node:20-alpine 内 `npm ci && npm run build`(生产模式),产物交由 `nginx:stable-alpine` 服务,镜像内已包含统一 nginx 配置(SPA fallback、gzip、`/api` 反代、25MB 上传限制)。
 
 ```bash
-# 构建并启动（前端 + nginx）
-docker compose up --build -d
+# 单独构建前端镜像(一般直接用根目录 docker compose 即可)
+docker build -t proj-web .
 ```
 
-访问：`http://localhost:8080`
-
-### 3.3 与后端联调
-
-推荐目录结构：
-
-```
-Proj/
-├── frontend/     # 本仓库（frontend-dev 分支）
-└── backend/      # FastAPI 后端（backend-dev 分支）
-```
-
-**Step 1：启动后端**
-
-```bash
-cd backend
-
-# 创建 .env（大模型凭据由后端统一管理）
-cat > .env << 'EOF'
-LLM_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
-LLM_API_KEY=sk-你的Key
-LLM_MODEL=qwen-plus
-EOF
-
-# 启动容器
-docker build -t proj-backend .
-docker run -d \
-  --name proj_backend \
-  -p 8000:8000 \
-  -v backend_data:/app/data \
-  --env-file .env \
-  proj-backend
-```
-
-> 前端不再保存或传递 API Key、API URL、模型名称。这些配置统一在后端 `.env` 中设置。
-
-**Step 2：启动前端**
-
-```bash
-cd ../frontend
-docker compose up --build -d
-```
-
-**Step 3：验证**
-
-| 地址 | 说明 |
-|------|------|
-| `http://localhost:8080` | 前端页面 |
-| `http://localhost:8080/api/health` | 后端健康检查（经 nginx 代理） |
-| `http://localhost:8080/docs` | FastAPI Swagger 文档 |
-| `http://localhost:8000/api/health` | 直接访问后端 |
-
-### 3.4 常用命令
-
-```bash
-# 查看运行状态
-docker ps
-
-# 查看日志
-docker compose logs -f nginx
-docker compose logs -f web
-
-# 停止服务
-docker compose down
-
-# 重启
-docker compose restart
-
-# 重新构建
-docker compose up --build -d
-```
-
-### 3.5 后端地址配置
-
-如果后端不在本机，修改 `nginx/conf.d/default.conf`：
-
-```nginx
-location /api/ {
-    proxy_pass http://192.168.1.100:8000/api/;  # 改成实际IP
-    ...
-}
-```
-
-然后重启 nginx：
-
-```bash
-docker compose restart nginx
-```
-
-> Windows Docker Desktop 需开启 **Settings → Resources → Network → Enable host networking**，`host.docker.internal` 才能正常解析。
+生产环境 `/api` 的代理目标是 compose 网络内的 `http://backend:8000`,不再依赖 `host.docker.internal`(该域名仅 Docker Desktop 可用,Linux 上会断链)。
 
 ---
 
@@ -151,18 +59,17 @@ docker compose restart nginx
 
 ```
 .
-├── Dockerfile.client       # 前端构建镜像
-├── docker-compose.yml      # 前端 + nginx 编排
+├── Dockerfile              # 前端构建镜像(构建 + nginx 运行)
 ├── nginx/
-│   ├── nginx.conf          # nginx 主配置
+│   ├── nginx.conf          # nginx 主配置(gzip)
 │   └── conf.d/
-│       └── default.conf    # 反向代理规则
+│       └── default.conf    # 静态服务 + /api 反代 + SSE 配置
 ├── src/                    # Vue 源码
 │   ├── api/                # API 接口封装
 │   ├── views/              # 页面组件
-│   │   ├── resume/         # 简历编辑与预览（含 PDF/Word 导出）
-│   │   ├── agent/          # AI 智能体工作台（生成 + 知识库管理）
-│   │   └── setting/        # 网站配置（主题等前端设置）
+│   │   ├── resume/         # 简历编辑与预览(含 PDF/Word 导出)
+│   │   ├── agent/          # AI 智能体工作台(生成 + 知识库管理)
+│   │   └── setting/        # 网站配置(主题、访问口令)
 │   ├── components/         # 公共组件
 │   └── ...
 └── public/                 # 静态资源
