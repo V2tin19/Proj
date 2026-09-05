@@ -1,0 +1,33 @@
+:root.dark {
+  color-scheme: dark;
+  --bg-color: #04070d;
+  --bg-card-color: #0d1420;
+  --bg-elevated: #131d2c;
+  --text-color: #f5f7fb;
+  --text-color2: #04070d;
+  --text-muted: #94a3ba;
+  --primary-color: #3b6cff;
+  --primary-color-hover: #5b84ff;
+  --primary-color-active: #2853dc;
+  --card-color: rgba(13, 20, 32, 0.94);
+  --panel-surface: rgba(9, 15, 24, 0.92);
+  --border-color: rgba(148, 163, 184, 0.15);
+  --shadow-color: rgba(0, 0, 0, 0.45);
+
+  --color-1: #02050a;
+  --color-2: #0b121d;
+  --color-3: #131d2c;
+  --color-4: #1d2b42;
+  --color-5: #29406b;
+  --color-6: #7b8faa;
+  --color-7: #d9e1ef;
+
+  --chat-bg: #060c15;
+  --chat-user-bubble: #1b429f;
+  --chat-ai-bubble: #0d1420;
+  --chat-bubble-shadow: rgba(0, 0, 0, 0.24);
+  --chat-input-bg: #0b121d;
+  --chat-border: rgba(148, 163, 184, 0.18);
+  --chat-input-text: var(--text-color);
+  --chat-placeholder: #73829a;
+}
