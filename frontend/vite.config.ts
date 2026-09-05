@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import path from "path";
 import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
@@ -24,9 +24,13 @@ export default defineConfig({
       },
     },
   },
-  base: "./",
-  mode: "development",
+  // base 固定为 "/":nginx 按根路径部署,history 路由由 SPA fallback 兜底
+  base: "/",
   worker: {
     format: "es",
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
   },
 });

@@ -73,11 +73,12 @@ import { getTemplates } from "../../../utils/getTemplates";
 import type { Template } from "../../../types/template";
 import { useResumeStore } from "../../../store";
 import { generateColorShades } from "../../../utils/colorUtils";
-import html2pdf from "html2pdf.js";
+
 import { createApp } from 'vue';
 import { storeToRefs } from 'pinia'
 import { message } from "ant-design-vue";
 import { exportResumeDocx } from "../../../api/agentAPI";
+import type { GeneratedResumeData } from "../../../types/agent";
 // 主题色部分功能
 const resumeStore = useResumeStore();
 const { resumeSetting } = storeToRefs(resumeStore);
@@ -119,7 +120,7 @@ const padding_top_bottom = computed({
   set: (val) => resumeStore.updateResumeSetting({ padding_top_bottom: val })
 })
 // 生成的色阶对象
-const colorShades = ref(generateColorShades(resumeSetting.value.themeColor1));
+const colorShades = computed(() => generateColorShades(resumeSetting.value.themeColor1));
 
 // 多模板切换部分功能
 // 动态导入所有模板组件
@@ -132,14 +133,15 @@ const currentComponent = ref();
 onMounted(async () => {
   try {
     templates.value = await getTemplates();
-    // 如果有已选中的模板，则恢复
-    if (currentTemplate.value) {
-      loadCurrentTemplate();
-    } else {
-      // 如果没有已选中的模板，则默认选中第一个
-      currentTemplate.value = templates.value[0].id;
-      loadCurrentTemplate();
+    if (!templates.value.length) {
+      console.error('模板列表为空，请检查 public/templates.json');
+      return;
     }
+    // 如果有已选中的模板，则恢复；否则默认选中第一个
+    if (!currentTemplate.value || !templates.value.some(t => t.id === currentTemplate.value)) {
+      currentTemplate.value = templates.value[0].id;
+    }
+    loadCurrentTemplate();
   } catch (error) {
     console.error('获取模板列表失败:', error);
   }
@@ -167,8 +169,6 @@ const loadCurrentTemplate = () => {
     const folderName = selectedTemplate.folderPath;
     if (!folderName) {
       console.error('模板路径错误:', selectedTemplate.folderPath);
-      currentTemplate.value = templates.value[0].id;
-      loadCurrentTemplate();
       return;
     }
     const importPath = `../../../template/${folderName}/index.vue`;
@@ -176,8 +176,6 @@ const loadCurrentTemplate = () => {
     if (importFunc) {
       currentComponent.value = defineAsyncComponent(() => importFunc() as Promise<typeof import('*.vue')['default']>);
     } else {
-      currentTemplate.value = templates.value[0].id;
-      loadCurrentTemplate();
       console.error(`未找到路径为 ${importPath} 的组件`);
     }
   }
@@ -256,8 +254,23 @@ const inlineCssVariables = (element: HTMLElement) => {
 };
 
 // 导出简历为 PDF
+const exportingPdf = ref(false);
 const exportToPDF = async () => {
-  await nextTick();
+  if (exportingPdf.value) return;
+  const selectedTemplate = templates.value.find(t => t.id === currentTemplate.value);
+  if (!selectedTemplate?.folderPath) {
+    message.error('未选择有效模板，无法导出');
+    return;
+  }
+  const importPath = `../../../template/${selectedTemplate.folderPath}/index.vue`;
+  const importFunc = templateModules[importPath];
+  if (!importFunc) {
+    console.error(`未找到路径为 ${importPath} 的组件`);
+    message.error('模板组件加载失败，无法导出');
+    return;
+  }
+
+  exportingPdf.value = true;
   // 创建一个新的容器来渲染简历内容
   const tempContainer = document.createElement("div");
   tempContainer.style.position = "absolute";
@@ -272,46 +285,45 @@ const exportToPDF = async () => {
   content.style.backgroundColor = "#ffffff";
   content.style.color = "#333333";
 
-  // 渲染当前模板的内容
-  const selectedTemplate = templates.value.find(t => t.id === currentTemplate.value);
-  if (selectedTemplate?.folderPath) {
-    const importPath = `../../../template/${selectedTemplate.folderPath}/index.vue`;
-    const importFunc = templateModules[importPath];
+  // 独立 app 实例渲染当前模板;finally 中统一清理,杜绝容器/实例泄漏
+  const mod = (await importFunc()) as { default: ComponentOptions };
+  const app = createApp(mod.default, {
+    colorShades: colorShades.value,
+  });
+  try {
+    app.mount(content);
+    tempContainer.appendChild(content);
+    await nextTick();
 
-    if (importFunc) {
-      const { default: Component } = await importFunc() as { default: ComponentOptions };
-      const app = createApp(Component, {
-        colorShades: colorShades.value,
-      });
-      // 挂载组件
-      app.mount(content);
-      tempContainer.appendChild(content);
-      await nextTick();
+    // 内联 CSS 变量，解决 html2canvas 颜色变淡问题
+    inlineCssVariables(content);
+    await nextTick();
 
-      // 内联 CSS 变量，解决 html2canvas 颜色变淡问题
-      inlineCssVariables(content);
-      await nextTick();
-
-      const options = {
-        filename: "resume.pdf",
-        margin: 0,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      };
-      html2pdf().from(content).set(options).save().finally(() => {
-        // 清理临时容器
-        document.body.removeChild(tempContainer);
-      });
-    } else {
-      console.error(`未找到路径为 ${importPath} 的组件`);
-    }
-
+    const [{ default: html2pdf }] = await Promise.all([
+      import("html2pdf.js"),
+      nextTick(),
+    ]);
+    const options = {
+      filename: "resume.pdf",
+      margin: 0,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+    await html2pdf().from(content).set(options).save();
+    message.success("PDF 导出成功");
+  } catch (error) {
+    console.error('PDF 导出失败:', error);
+    message.error('PDF 导出失败，请重试');
+  } finally {
+    app.unmount();
+    tempContainer.remove();
+    exportingPdf.value = false;
   }
 };
 
@@ -327,7 +339,7 @@ const exportToWord = async () => {
       honors: resumeStore.honors,
       summary: resumeStore.summary,
     };
-    const blob = await exportResumeDocx(payload as any);
+    const blob = await exportResumeDocx(payload as GeneratedResumeData);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

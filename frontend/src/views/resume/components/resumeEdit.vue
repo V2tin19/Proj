@@ -72,6 +72,12 @@ const moduleMap = new Map<SectionKey, ModuleDefinition>(
 
 const resumeStore = useResumeStore();
 
+// 统一持久化:编辑页所有分区组件共享一个订阅(原先 6 个组件各自 deep watcher,
+// 每敲一个字触发 6 次全量 JSON.stringify + localStorage 写入)
+resumeStore.$subscribe(() => {
+  resumeStore.saveToLocalStorage();
+});
+
 const orderedModules = computed(() =>
   resumeStore.sectionOrder
     .map(key => moduleMap.get(key))

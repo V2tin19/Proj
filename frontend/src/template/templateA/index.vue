@@ -58,7 +58,7 @@
     <section class="section skills-section" v-if="resume.honors.length" :style="sectionStyle('honors')">
       <div class="section-title">荣誉奖项</div>
       <ul class="skills-list">
-        <li v-for="honor in resume.honors" :key="honor.id" v-html="marked(honor.honorName)"></li>
+        <li v-for="honor in resume.honors" :key="honor.id" v-html="safeMarked(honor.honorName)"></li>
       </ul>
     </section>
 
@@ -80,7 +80,7 @@
     <section class="section skills-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
       <div class="section-title">技能特长</div>
       <ul class="skills-list">
-        <li v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></li>
+        <li v-for="skill in resume.skills" :key="skill.id" v-html="safeMarked(skill.skillName)"></li>
       </ul>
     </section>
     <!-- 工作/实习经历 -->
@@ -96,7 +96,7 @@
             </div>
           </div>
           <ul>
-            <li v-for="(desc, index) in work.description.split('\n')" :key="index" v-html="marked(desc)"></li>
+            <li v-for="(desc, index) in work.description.split('\n')" :key="index" v-html="safeMarked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -114,10 +114,10 @@
               <span v-if="project.startDate">{{ project.startDate }} 至 {{ project.endDate || '至今' }}</span>
             </div>
             <hr>
-            <p class="project-introduction" v-html="marked(project.briefIntroduction)"></p>
+            <p class="project-introduction" v-html="safeMarked(project.briefIntroduction)"></p>
           </div>
           <ul>
-            <li v-for="(desc, index) in project.description.split('\n')" :key="index" v-html="marked(desc)"></li>
+            <li v-for="(desc, index) in project.description.split('\n')" :key="index" v-html="safeMarked(desc)"></li>
           </ul>
         </div>
       </div>
@@ -126,65 +126,20 @@
     <!-- 自我评价 -->
     <section class="section self-evaluation-section" v-if="resume.summary" :style="sectionStyle('summary')">
       <div class="section-title">自我评价</div>
-      <p class="self-evaluation" v-html="marked(resume.summary)"></p>
+      <p class="self-evaluation" v-html="safeMarked(resume.summary)"></p>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useResumeStore } from '../../store/useResumeStore';
-import { computed, watch, onMounted } from 'vue';
-import { marked } from 'marked';
-import { normalizeSectionOrder } from '../../constants/sectionOrder';
-import type { SectionKey } from '../../types/resume';
+import { safeMarked } from '@/utils/safeMarked';
+import { useResumeStyle } from '@/composables/useResumeStyle';
 
-// 引入引用的store
-const resumeStore = useResumeStore();
-const resume = computed(() => resumeStore.$state);
-
-
-// 合并所有样式到一个计算属性
-const resumeStyle = computed(() => {
-  return {
-    '--paragraph-spacing': `${resume.value.resumeSetting.paragraphSpacing}px`,
-    '--section-spacing': `${resume.value.resumeSetting.sectionSpacing}px`,
-    '--padding-left-right': `${resume.value.resumeSetting.padding_left_right}px`,
-    '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
-    '--themeColor1': resume.value.resumeSetting.themeColor1,
-    '--themeColor2': resume.value.resumeSetting.themeColor2
-  };
-});
-
-const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
-
-const sectionStyle = (key: SectionKey, offset = 0) => {
-  const index = sectionOrder.value.indexOf(key);
-  const base = index === -1 ? sectionOrder.value.length : index;
-  return {
-    order: base + offset,
-  };
-};
-
-// 组件挂载时设置字体大小
-onMounted(() => {
-  document.documentElement.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
-});
-
-// 监听字体大小变化
-watch(
-  () => resume.value.resumeSetting.fontSize,
-  (newSize) => {
-    document.documentElement.style.fontSize = `${newSize}px`;
-  }
-);
+// 公共取数/样式/字号逻辑见 composables/useResumeStyle.ts
+const { resume, resumeStyle, sectionStyle } = useResumeStyle();
 </script>
 <!-- 引入外部css -->
 <style scoped>
-@font-face {
-  font-family: 'zql';
-  src: url('./zql.woff2') format('woff2')
-}
-
 .resume-container {
   max-width: 960px;
   padding: var(--padding-top-bottom, 20px) var(--padding-left-right, 30px);

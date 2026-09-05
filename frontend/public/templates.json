@@ -34,14 +34,5 @@
     "thumbnail": "preview.jpg",
     "author": "AI",
     "link": "https://github.com/weidong-repo"
-  },
-  {
-    "id": "devlop",
-    "name": "开发版本【开发用】",
-    "description": "供开发者参考开发的模板-建议开发者开发的时候复制模板使用。建议把本模板放到最后",
-    "folderPath": "dev",
-    "thumbnail": "preview.jpg",
-    "author": "吃猫的鱼",
-    "link": "https://github.com/weidong-repo"
   }
 ]

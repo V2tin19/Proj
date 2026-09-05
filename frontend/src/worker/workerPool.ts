@@ -1,90 +1,74 @@
 import type { DialogueHistory } from "../types/aiDialogue";
 
-export class WorkerPool {
-  private workers: Worker[] = []; // Worker 线程池
-  private queue: {
-    taskId: number;
-    messages: DialogueHistory;
-    onResponse: (responseText: string, isComplete: boolean) => void;
-  }[] = []; // 任务队列
-  private activeTasks: Map<number, Worker> = new Map(); // 正在执行的任务
-  private nextTaskId = 1;     // 任务 ID 计数器
+interface QueueTask {
+  taskId: number;
+  messages: DialogueHistory;
+  onResponse: (responseText: string, isComplete: boolean, error?: boolean) => void;
+}
 
-  // 构建，初始化线程池
+export class WorkerPool {
+  private workers: Worker[] = []; // 空闲 Worker 线程
+  private queue: QueueTask[] = []; // 任务队列
+  private activeTasks = 0; // 正在执行的任务数
+  private nextTaskId = 1; // 任务 ID 计数器
+
   constructor(workerCount: number) {
     for (let i = 0; i < workerCount; i++) {
       const worker = new Worker(new URL("./aiWorker.ts", import.meta.url), { type: "module" });
-      this.workers.push(worker);
-      worker.onmessage = (event) => {
-        const { taskId, result, isComplete } = event.data;
-        const task = this.queue.find((t) => t.taskId === taskId);
-        if (task) {
-          task.onResponse(result, isComplete);
-        }
-        if (isComplete) {
-          this.activeTasks.delete(taskId);
-          this.workers.push(worker);
-          this.processQueue();
-        }
-      };
       worker.onerror = (error) => {
-        console.error("Worker 处理任务失败:", error);
+        console.error("Worker 异常:", error);
         this.workers.push(worker);
         this.processQueue();
       };
+      this.workers.push(worker);
     }
   }
 
   /**
    * 新增任务
    * @param messages  对话历史
-   * @param onResponse  结果回调
+   * @param onResponse  结果回调(isComplete=true 时结束;error=true 表示失败)
    */
   execute(
     messages: DialogueHistory,
-    onResponse: (responseText: string, isComplete: boolean) => void
+    onResponse: (responseText: string, isComplete: boolean, error?: boolean) => void
   ): void {
     const taskId = this.nextTaskId++;
     this.queue.push({ taskId, messages, onResponse });
     this.processQueue();
   }
 
-  /**
-   * 处理任务队列
-   */
   private processQueue() {
-    if (this.queue.length > 0 && this.workers.length > 0) {
-      const worker = this.workers.pop()!;
-      const { taskId, messages, onResponse } = this.queue.shift()!;
-      this.activeTasks.set(taskId, worker);
-      try {
-        // postMessage自动克隆出现问题，这里手动克隆 messages
-        const clonedMessages = JSON.parse(JSON.stringify(messages));
-        worker.postMessage({ taskId, messages: clonedMessages });
-        console.log(`任务${taskId}分配给 Worker:${worker}`);
-        worker.onmessage = (event) => {
-          const { taskId, result, isComplete } = event.data;
-          onResponse(result, isComplete);
-          if (isComplete) {
-            this.activeTasks.delete(taskId);
-            this.workers.push(worker);
-            this.processQueue();
-          }
-        };
-      } catch (error) {
-        onResponse("数据传输失败", true);
-        this.workers.push(worker);
-        this.processQueue();
-      }
+    if (this.queue.length === 0 || this.workers.length === 0) return;
+    const worker = this.workers.pop()!;
+    const { taskId, messages, onResponse } = this.queue.shift()!;
+    this.activeTasks++;
+    try {
+      // postMessage 用结构化克隆;显式克隆一份防止调用方继续修改
+      const clonedMessages = JSON.parse(JSON.stringify(messages));
+      worker.onmessage = (event: MessageEvent) => {
+        const { result, isComplete, error } = event.data;
+        onResponse(result, isComplete, error);
+        if (isComplete) {
+          this.activeTasks--;
+          this.workers.push(worker);
+          this.processQueue();
+        }
+      };
+      worker.postMessage({ taskId, messages: clonedMessages });
+    } catch (error) {
+      this.activeTasks--;
+      onResponse("数据传输失败", true, true);
+      this.workers.push(worker);
+      this.processQueue();
     }
   }
 
-  /**
-   * 终止所有 Worker
-   */
+  /** 终止所有 Worker */
   terminate() {
     this.workers.forEach((worker) => worker.terminate());
     this.workers = [];
-    this.activeTasks.clear();
+    this.queue = [];
+    this.activeTasks = 0;
   }
 }

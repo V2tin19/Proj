@@ -2,7 +2,7 @@
 import { ref, nextTick, reactive } from "vue"
 import { sendToQwenAIDialogue } from "../../../api/qwenAPI"
 import type { DialogueHistory, AIDialogue } from "../../../types/aiDialogue"
-import { marked } from 'marked';
+import { safeMarked } from '@/utils/safeMarked';
 import { inject, type Ref } from "vue";
 
 
@@ -51,7 +51,7 @@ const formatMessage = (content: string) => {
   // 过滤掉```resume  ```中的内容
   content = content.replace(/```resume[\s\S]*?```/g, "");
   content = content.replace(/```岗位jd[\s\S]*?```/g, "");
-  return marked(content);
+  return safeMarked(content);
 };
 // 滚动到底部
 const scrollToBottom = async () => {
@@ -169,7 +169,7 @@ const restart = () => {
         <a-badge-ribbon :text="'AI评分：' + interviewResultScore + '分'"
           :color="interviewResultScore >= 60 ? 'green' : 'red'">
           <a-card title="AI评估面试结果" size="small" class="result-card">
-            <div class="message-text result-content" v-html="marked(interviewResult)"></div>
+            <div class="message-text result-content" v-html="safeMarked(interviewResult)"></div>
           </a-card>
         </a-badge-ribbon>
       </div>

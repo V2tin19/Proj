@@ -9,6 +9,22 @@
         如需调整，请修改后端 <code>.env</code> 文件并重启后端服务。
       </p>
 
+      <!-- 访问口令 -->
+      <div class="input-group">
+        <label>访问口令（X-Access-Code）</label>
+        <div class="access-code-row">
+          <a-input-password
+            v-model:value="accessCodeDraft"
+            placeholder="后端 .env 设置 ACCESS_CODE 后必填"
+            allow-clear
+          />
+          <a-button type="primary" @click="saveAccessCode">保存</a-button>
+        </div>
+        <p class="field-tip">
+          启用访问控制后,所有 AI 接口需要该口令;保存后立即生效。
+        </p>
+      </div>
+
       <!-- 主题切换 -->
       <div class="input-group">
         <label>主题模式</label>
@@ -24,9 +40,17 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { message } from 'ant-design-vue';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 const settingsStore = useSettingsStore();
+const accessCodeDraft = ref<string>(settingsStore.accessCode);
+
+const saveAccessCode = () => {
+  settingsStore.updateAccessCode(accessCodeDraft.value);
+  message.success(accessCodeDraft.value ? '访问口令已保存' : '访问口令已清除');
+};
 </script>
 
 <style scoped>
@@ -61,6 +85,17 @@ const settingsStore = useSettingsStore();
   flex-direction: column;
   gap: 8px;
   margin-bottom: 20px;
+}
+
+.access-code-row {
+  display: flex;
+  gap: 8px;
+}
+
+.field-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 label {

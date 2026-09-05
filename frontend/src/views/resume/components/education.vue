@@ -67,16 +67,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { PlusOutlined, MenuOutlined } from '@ant-design/icons-vue';
 import { useResumeStore } from '../../../store';
+import { useDragReorder } from '../../../composables/useDragReorder';
 import { QuestionCircleOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { moveItem } from '../../../utils/reorder';
+
 const resumeStore = useResumeStore();
 const education = computed(() => resumeStore.education);
-const draggingIndex = ref<number | null>(null);
-const dragOverIndex = ref<number | null>(null);
+const { dragOverIndex, onDragStart, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDrop } =
+  useDragReorder(() => education.value, () => resumeStore.saveToLocalStorage());
 
 // 添加教育经历
 const addEducation = () => {
@@ -94,70 +95,6 @@ const removeEducation = (id: number) => {
   resumeStore.deleteEducation(id)
   message.success('教育经历删除成功！');
 };
-
-const onDragStart = (index: number, event: DragEvent) => {
-  draggingIndex.value = index;
-  dragOverIndex.value = null;
-  event.dataTransfer?.setData('text/plain', String(index));
-  event.dataTransfer && (event.dataTransfer.effectAllowed = 'move');
-};
-
-const onDragEnd = () => {
-  draggingIndex.value = null;
-  dragOverIndex.value = null;
-};
-
-const onDragEnter = (index: number) => {
-  if (draggingIndex.value === null || draggingIndex.value === index) return;
-  dragOverIndex.value = index;
-};
-
-const onDragLeave = (index: number) => {
-  if (dragOverIndex.value === index) {
-    dragOverIndex.value = null;
-  }
-};
-
-const onDragOver = (index: number, event: DragEvent) => {
-  if (draggingIndex.value === null) return;
-  event.dataTransfer && (event.dataTransfer.dropEffect = 'move');
-  if (dragOverIndex.value !== index && draggingIndex.value !== index) {
-    dragOverIndex.value = index;
-  }
-};
-
-const onDrop = (index: number, event: DragEvent) => {
-  event.preventDefault();
-  if (draggingIndex.value === null) return;
-  const currentTarget = event.currentTarget as HTMLElement | null;
-  let toIndex = index;
-  if (currentTarget) {
-    const rect = currentTarget.getBoundingClientRect();
-    const offset = event.clientY - rect.top;
-    if (offset > rect.height / 2) {
-      toIndex = index + 1;
-    }
-  }
-  const fromIndex = draggingIndex.value;
-  if (fromIndex < toIndex) {
-    toIndex -= 1;
-  }
-  if (fromIndex !== toIndex) {
-    moveItem(education.value, fromIndex, toIndex);
-    resumeStore.saveToLocalStorage();
-  }
-  draggingIndex.value = null;
-  dragOverIndex.value = null;
-};
-
-// 监听变化并保存到 localStorage
-watch(
-  () => resumeStore.$state,
-  () => {
-    resumeStore.saveToLocalStorage();
-  },
-  { deep: true }
-);
 </script>
 
 <style scoped>

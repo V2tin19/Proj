@@ -281,13 +281,6 @@ export const useResumeStore = defineStore('resume', {
       this.updateItem(this.honors, updatedItem);
     },
 
-    loadFromLocalStorage() {
-      const stored = localStorage.getItem('resumeStore');
-      if (stored) {
-        this.$state = JSON.parse(stored);
-      }
-    },
-
     // 初始化检查
     async initCheck() {
       if (this.isFirstVisit) {

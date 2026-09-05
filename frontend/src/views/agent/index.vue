@@ -192,105 +192,7 @@
           </a-tab-pane>
 
           <a-tab-pane key="knowledge" tab="知识库管理">
-            <div class="form-section">
-              <div class="section-title">
-                <span>知识库配置</span>
-                <div>
-                  <a-button size="small" @click="loadKnowledgeBaseResources" style="margin-right: 8px;">刷新</a-button>
-                  <a-button size="small" type="primary" :loading="savingKbConfig" @click="saveKbConfig">保存配置</a-button>
-                </div>
-              </div>
-              <div v-if="knowledgeBaseConfig" class="config-grid">
-                <div class="config-item">
-                  <span>分块大小</span>
-                  <a-input-number v-model:value="kbConfigForm.chunkSize" :min="50" :max="2000" style="width: 100%;" />
-                </div>
-                <div class="config-item">
-                  <span>分块重叠</span>
-                  <a-input-number v-model:value="kbConfigForm.chunkOverlap" :min="0" :max="500" style="width: 100%;" />
-                </div>
-                <div class="config-item">
-                  <span>Top K</span>
-                  <a-input-number v-model:value="kbConfigForm.retrievalTopK" :min="1" :max="100" style="width: 100%;" />
-                </div>
-                <div class="config-item">
-                  <span>匹配算法</span>
-                  <a-select v-model:value="kbConfigForm.matchAlgorithm" style="width: 100%;">
-                    <a-select-option value="token-overlap">token-overlap</a-select-option>
-                    <a-select-option value="vector-cosine">vector-cosine</a-select-option>
-                  </a-select>
-                </div>
-                <div class="config-item">
-                  <span>向量/检索实现</span>
-                  <a-select v-model:value="kbConfigForm.embeddingProvider" style="width: 100%;">
-                    <a-select-option value="local">local</a-select-option>
-                    <a-select-option value="sentence-transformers">sentence-transformers</a-select-option>
-                  </a-select>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <div class="section-title">
-                <span>新增知识条目</span>
-              </div>
-              <a-tabs size="small">
-                <a-tab-pane key="text" tab="手动录入">
-                  <div class="grid-two">
-                    <a-input v-model:value="knowledgeForm.name" placeholder="文档名称" />
-                    <a-input v-model:value="knowledgeForm.category" placeholder="分类，如技术岗 / 写作规范" />
-                  </div>
-                  <a-textarea
-                    v-model:value="knowledgeForm.content"
-                    :auto-size="{ minRows: 5, maxRows: 8 }"
-                    placeholder="粘贴简历模板规范、岗位描述经验、优秀案例要点等文本内容"
-                  />
-                  <a-button type="primary" :loading="savingKnowledge" @click="submitKnowledgeDocument">
-                    保存到知识库
-                  </a-button>
-                </a-tab-pane>
-                <a-tab-pane key="upload" tab="文件上传">
-                  <a-upload-dragger
-                    :showUploadList="false"
-                    :beforeUpload="handleKnowledgeFileUpload"
-                    :disabled="uploadingKnowledge"
-                    accept=".docx,.pdf,.txt,.md"
-                  >
-                    <p class="ant-upload-drag-icon">
-                      <upload-outlined />
-                    </p>
-                    <p class="ant-upload-text">点击或拖拽文件到此区域上传</p>
-                    <p class="ant-upload-hint">支持 .docx、.pdf、.txt、.md，单文件不超过 20MB</p>
-                  </a-upload-dragger>
-                </a-tab-pane>
-              </a-tabs>
-            </div>
-
-            <div class="form-section">
-              <div class="section-title">
-                <span>已有知识条目</span>
-              </div>
-              <a-empty v-if="knowledgeDocuments.length === 0" description="暂时还没有知识条目" />
-              <div v-else class="knowledge-list">
-                <div v-for="item in knowledgeDocuments" :key="item.id" class="knowledge-card">
-                  <div class="knowledge-top">
-                    <div>
-                      <strong>{{ item.name }}</strong>
-                      <p>{{ item.category }}</p>
-                    </div>
-                    <a-popconfirm
-                      title="确定删除这个知识条目吗？"
-                      ok-text="删除"
-                      cancel-text="取消"
-                      @confirm="removeKnowledge(item.id)"
-                    >
-                      <a-button size="small" danger ghost>删除</a-button>
-                    </a-popconfirm>
-                  </div>
-                  <p class="knowledge-content">{{ item.content }}</p>
-                </div>
-              </div>
-            </div>
+            <KnowledgeBasePanel />
           </a-tab-pane>
         </a-tabs>
 
@@ -321,10 +223,6 @@
             <div class="mini-card">
               <span>模板数量</span>
               <strong>{{ templates.length }}</strong>
-            </div>
-            <div class="mini-card">
-              <span>知识条目</span>
-              <strong>{{ knowledgeDocuments.length }}</strong>
             </div>
             <div class="mini-card">
               <span>当前生成模式</span>
@@ -434,23 +332,15 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { message } from "ant-design-vue";
 import { useRouter } from "vue-router";
-import { UploadOutlined } from "@ant-design/icons-vue";
 import {
-  createKnowledgeDocument,
-  deleteKnowledgeDocument,
   generateResume,
   getBackendHealth,
-  getKnowledgeBaseConfig,
-  getKnowledgeDocuments,
-  getPromptTemplates,
-  updateKnowledgeBaseConfig,
-  uploadKnowledgeDocument
+  getPromptTemplates
 } from "../../api/agentAPI";
 import { useResumeStore } from "../../store";
+import KnowledgeBasePanel from "./components/KnowledgeBasePanel.vue";
 import type {
   GeneratedResumeResponse,
-  KnowledgeBaseConfig,
-  KnowledgeDocument,
   PromptTemplate,
   ResumeGenerateRequest,
   StudentEducationInput,
@@ -463,20 +353,8 @@ const resumeStore = useResumeStore();
 
 const activeTab = ref("profile");
 const generating = ref(false);
-const savingKnowledge = ref(false);
-const uploadingKnowledge = ref(false);
 const pageLoading = ref(false);
 const templates = ref<PromptTemplate[]>([]);
-const knowledgeBaseConfig = ref<KnowledgeBaseConfig | null>(null);
-const knowledgeDocuments = ref<KnowledgeDocument[]>([]);
-const savingKbConfig = ref(false);
-const kbConfigForm = reactive<KnowledgeBaseConfig>({
-  chunkSize: 300,
-  chunkOverlap: 50,
-  retrievalTopK: 5,
-  matchAlgorithm: "token-overlap",
-  embeddingProvider: "local",
-});
 const generatedResult = ref<GeneratedResumeResponse | null>(null);
 const backendHealth = ref<{ ok: boolean; now: string; provider: string } | null>(null);
 
@@ -531,12 +409,6 @@ const form = reactive<ResumeGenerateRequest>({
   educationExperiences: [createEmptyEducation()],
   workExperiences: [createEmptyWork()],
   projectExperiences: [createEmptyProject()]
-});
-
-const knowledgeForm = reactive({
-  name: "",
-  category: "",
-  content: ""
 });
 
 const templateOptions = computed(() =>
@@ -658,36 +530,6 @@ function removeWorkRow(index: number) {
   form.workExperiences.splice(index, 1);
 }
 
-async function loadKnowledgeBaseResources() {
-  const [config, documents] = await Promise.all([
-    getKnowledgeBaseConfig(),
-    getKnowledgeDocuments()
-  ]);
-  knowledgeBaseConfig.value = config;
-  knowledgeDocuments.value = documents;
-  if (config) {
-    kbConfigForm.chunkSize = config.chunkSize;
-    kbConfigForm.chunkOverlap = config.chunkOverlap;
-    kbConfigForm.retrievalTopK = config.retrievalTopK;
-    kbConfigForm.matchAlgorithm = config.matchAlgorithm;
-    kbConfigForm.embeddingProvider = config.embeddingProvider;
-  }
-}
-
-async function saveKbConfig() {
-  savingKbConfig.value = true;
-  try {
-    const updated = await updateKnowledgeBaseConfig({ ...kbConfigForm });
-    knowledgeBaseConfig.value = updated;
-    message.success("知识库配置已保存");
-  } catch (error) {
-    console.error(error);
-    message.error("保存知识库配置失败");
-  } finally {
-    savingKbConfig.value = false;
-  }
-}
-
 async function loadInitialData() {
   pageLoading.value = true;
   try {
@@ -702,7 +544,6 @@ async function loadInitialData() {
       form.templateId = promptTemplates[0].id;
     }
 
-    await loadKnowledgeBaseResources();
     fillFromResumeStore();
   } catch (error) {
     console.error(error);
@@ -710,69 +551,6 @@ async function loadInitialData() {
   } finally {
     pageLoading.value = false;
   }
-}
-
-async function submitKnowledgeDocument() {
-  if (!knowledgeForm.name.trim() || !knowledgeForm.content.trim()) {
-    message.warning("请先填写文档名称和内容");
-    return;
-  }
-
-  savingKnowledge.value = true;
-  try {
-    await createKnowledgeDocument({
-      name: knowledgeForm.name,
-      category: knowledgeForm.category || "未分类",
-      content: knowledgeForm.content
-    });
-    knowledgeForm.name = "";
-    knowledgeForm.category = "";
-    knowledgeForm.content = "";
-    await loadKnowledgeBaseResources();
-    message.success("知识条目已写入本地知识库");
-  } catch (error) {
-    console.error(error);
-    message.error("保存知识条目失败");
-  } finally {
-    savingKnowledge.value = false;
-  }
-}
-
-async function removeKnowledge(documentId: string) {
-  try {
-    await deleteKnowledgeDocument(documentId);
-    knowledgeDocuments.value = knowledgeDocuments.value.filter((item) => item.id !== documentId);
-    message.success("知识条目已删除");
-  } catch (error) {
-    console.error(error);
-    message.error("删除知识条目失败");
-  }
-}
-
-async function handleKnowledgeFileUpload(file: File) {
-  const allowedExtensions = [".docx", ".pdf", ".txt", ".md"];
-  const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
-  if (!allowedExtensions.includes(ext)) {
-    message.error("仅支持 .docx、.pdf、.txt、.md 格式");
-    return false;
-  }
-  if (file.size > 20 * 1024 * 1024) {
-    message.error("文件大小不能超过 20MB");
-    return false;
-  }
-
-  uploadingKnowledge.value = true;
-  try {
-    await uploadKnowledgeDocument(file);
-    await loadKnowledgeBaseResources();
-    message.success(`文件 "${file.name}" 已解析并入库`);
-  } catch (error: any) {
-    console.error(error);
-    message.error(error?.response?.data?.detail || "文件上传失败");
-  } finally {
-    uploadingKnowledge.value = false;
-  }
-  return false;
 }
 
 function validateGenerateForm() {

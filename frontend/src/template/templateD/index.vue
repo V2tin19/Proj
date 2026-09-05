@@ -41,7 +41,7 @@
         <i class="fas fa-user"></i>
       </div>
       <h2 class="section-title">个人总结</h2>
-      <div class="section-content summary" v-html="marked(resume.summary)"></div>
+      <div class="section-content summary" v-html="safeMarked(resume.summary)"></div>
     </section>
 
     <!-- 教育经历 -->
@@ -76,7 +76,7 @@
             <span v-if="work.startDate" class="time">{{ work.startDate }} ~ {{ work.endDate || '至今' }}</span>
           </div>
 
-          <div v-if="work.description" class="description" v-html="marked(work.description)"></div>
+          <div v-if="work.description" class="description" v-html="safeMarked(work.description)"></div>
         </div>
       </div>
     </section>
@@ -95,9 +95,9 @@
             <span v-if="project.startDate" class="time">{{ project.startDate }} ~ {{ project.endDate || '至今' }}</span>
           </div>
 
-          <div v-if="project.briefIntroduction" class="brief" v-html="marked(project.briefIntroduction)"></div>
+          <div v-if="project.briefIntroduction" class="brief" v-html="safeMarked(project.briefIntroduction)"></div>
           <ul v-if="project.description" class="description-list">
-            <li v-for="(desc, index) in String(project.description).split('\n')" :key="index" v-html="marked(desc)">
+            <li v-for="(desc, index) in String(project.description).split('\n')" :key="index" v-html="safeMarked(desc)">
             </li>
           </ul>
         </div>
@@ -112,7 +112,7 @@
       <h2 class="section-title">技能特长</h2>
       <div class="section-content">
         <div class="skills-list">
-          <p v-for="skill in resume.skills" :key="skill.id" class="skill-item" v-html="marked(skill.skillName)"></p>
+          <p v-for="skill in resume.skills" :key="skill.id" class="skill-item" v-html="safeMarked(skill.skillName)"></p>
         </div>
       </div>
     </section>
@@ -125,7 +125,7 @@
       <h2 class="section-title">荣誉奖项</h2>
       <div class="section-content">
         <div v-for="honor in resume.honors" :key="honor.id" class="honor-item">
-          <span class="honor-name" v-html="marked(honor.honorName)"></span>
+          <span class="honor-name" v-html="safeMarked(honor.honorName)"></span>
           <span class="honor-date">{{ honor.date }}</span>
         </div>
       </div>
@@ -134,64 +134,27 @@
 </template>
 
 <script setup lang="ts">
-import { useResumeStore } from '../../store/useResumeStore';
-import { computed, watch, onMounted } from 'vue';
+import { computed } from 'vue';
 import type { ColorShades } from '../../types/color';
-import { marked } from 'marked';
-import { normalizeSectionOrder } from '../../constants/sectionOrder';
-import type { SectionKey } from '../../types/resume';
+import { safeMarked } from '@/utils/safeMarked';
+import { useResumeStyle } from '@/composables/useResumeStyle';
 
-// 接受父组件的主题色
+// 接受父组件的主题色(响应式传入,换色即时生效)
 const props = defineProps<{
   colorShades: ColorShades;
 }>();
 
-// 引入引用的store
-const resumeStore = useResumeStore();
-const resume = computed(() => resumeStore.$state);
+const { resume, spacingStyle, sectionStyle } = useResumeStyle();
 
-// 动态生成 CSS 变量的样式
+// 主题色阶 CSS 变量 + 公共间距变量
 const colorShadesStyle = computed(() => ({
   '--color-lighter': props.colorShades.lighter,
   '--color-light': props.colorShades.light,
   '--color-base': props.colorShades.base,
   '--color-dark': props.colorShades.dark,
   '--color-darker': props.colorShades.darker,
-  '--paragraph-spacing': `${resume.value.resumeSetting.paragraphSpacing}px`,
-  '--section-spacing': `${resume.value.resumeSetting.sectionSpacing}px`,
-  '--padding-left-right': `${resume.value.resumeSetting.padding_left_right}px`,
-  '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
+  ...spacingStyle.value,
 }));
-
-const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
-
-const sectionStyle = (key: SectionKey, offset = 0) => {
-  const index = sectionOrder.value.indexOf(key);
-  const base = index === -1 ? sectionOrder.value.length : index;
-  return {
-    order: base + offset,
-  };
-};
-
-// 组件挂载时设置字体大小
-onMounted(() => {
-  updateFontSize();
-});
-
-// 更新字体大小的函数
-const updateFontSize = () => {
-  document.documentElement.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
-  document.body.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
-};
-
-// 监听字体大小变化
-watch(
-  () => resume.value.resumeSetting.fontSize,
-  () => {
-    updateFontSize();
-  },
-  { immediate: true }
-);
 </script>
 
 <style scoped>

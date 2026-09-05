@@ -62,7 +62,7 @@ const tourOpen = ref(false);
 const tourSteps: TourProps["steps"] = [
   {
     title: "网站配置",
-    description: "请先进入网站配置，补充模型接口等基础信息，否则 AI 能力无法稳定使用。",
+    description: "在网站配置中可设置访问口令与主题;AI 能力由后端统一配置。",
     target: () => setting.value,
   },
   {

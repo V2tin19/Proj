@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useResumeStore } from '../../../store';
 import { PlusOutlined } from '@ant-design/icons-vue';
 
@@ -120,13 +120,7 @@ const handleAvatarChange = (info: any) => {
 };
 
 // 监听 store 的变化，保存到 localStorage
-watch(
-  () => resumeStore.$state,
-  () => {
-    resumeStore.saveToLocalStorage();
-  },
-  { deep: true }
-);
+
 </script>
 
 <style scoped>

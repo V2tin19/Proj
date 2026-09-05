@@ -59,7 +59,7 @@
       <div class="side-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
         <h2 class="side-title">技能特长</h2>
         <div class="skills-wrapper">
-          <p class="skill-tag" v-for="skill in resume.skills" :key="skill.id" v-html="marked(skill.skillName)"></p>
+          <p class="skill-tag" v-for="skill in resume.skills" :key="skill.id" v-html="safeMarked(skill.skillName)"></p>
         </div>
       </div>
     </aside>
@@ -68,7 +68,7 @@
     <main class="main-content">
       <section class="content-section" v-if="resume.summary" :style="sectionStyle('summary')">
         <h2 class="section-title">个人简介</h2>
-        <p class="summary" v-html="marked(resume.summary)"></p>
+        <p class="summary" v-html="safeMarked(resume.summary)"></p>
       </section>
 
       <section class="content-section" v-if="resume.workExperience.length" :style="sectionStyle('workExperience')">
@@ -80,7 +80,7 @@
             <span v-if="work.startDate" class="exp-date">{{ work.startDate }} - {{ work.endDate || '至今' }}</span>
           </div>
 
-          <div class="exp-desc" v-html="marked(work.description)"></div>
+          <div class="exp-desc" v-html="safeMarked(work.description)"></div>
         </div>
       </section>
 
@@ -94,15 +94,15 @@
               }}</span>
           </div>
 
-          <div class="proj-brief" v-html="marked(project.briefIntroduction)"></div>
-          <div class="proj-details" v-html="marked(project.description)"></div>
+          <div class="proj-brief" v-html="safeMarked(project.briefIntroduction)"></div>
+          <div class="proj-details" v-html="safeMarked(project.description)"></div>
         </div>
       </section>
 
       <section class="content-section" v-if="resume.honors.length" :style="sectionStyle('honors')">
         <h2 class="section-title">荣誉奖项</h2>
         <p v-for="honor in resume.honors" :key="honor.id" class="honor-item">
-          <span v-html="marked(honor.honorName)"></span>
+          <span v-html="safeMarked(honor.honorName)"></span>
           <span class="honor-date" v-if="honor.date">{{ honor.date }}</span>
         </p>
       </section>
@@ -111,58 +111,16 @@
 </template>
 
 <script setup lang="ts">
-import { useResumeStore } from '../../store/useResumeStore';
-import { computed, watch, onMounted } from 'vue';
-import { marked } from 'marked';
-import { normalizeSectionOrder } from '../../constants/sectionOrder';
-import type { SectionKey } from '../../types/resume';
+import { computed } from 'vue';
+import { safeMarked } from '@/utils/safeMarked';
+import { useResumeStyle } from '@/composables/useResumeStyle';
 
-// 引用的store
-const resumeStore = useResumeStore();
-const resume = computed(() => resumeStore.$state);
-
-
-
+const { resume, resumeStyle, sectionStyle } = useResumeStyle();
 // 判断是否有联系方式信息
 const hasContactInfo = computed(() => {
   const { phone, email, website, gender, age, politicalStatus, university, major } = resume.value.personalInfo;
   return phone || email || website || gender || age || politicalStatus || university || major;
 });
-
-// 合并所有样式到一个计算属性
-const resumeStyle = computed(() => {
-  return {
-    '--paragraph-spacing': `${resume.value.resumeSetting.paragraphSpacing}px`,
-    '--section-spacing': `${resume.value.resumeSetting.sectionSpacing}px`,
-    '--padding-left-right': `${resume.value.resumeSetting.padding_left_right}px`,
-    '--padding-top-bottom': `${resume.value.resumeSetting.padding_top_bottom}px`,
-    '--themeColor1': resume.value.resumeSetting.themeColor1,
-    '--themeColor2': resume.value.resumeSetting.themeColor2
-  };
-});
-
-const sectionOrder = computed<SectionKey[]>(() => normalizeSectionOrder(resume.value.sectionOrder));
-
-const sectionStyle = (key: SectionKey, offset = 0) => {
-  const index = sectionOrder.value.indexOf(key);
-  const base = index === -1 ? sectionOrder.value.length : index;
-  return {
-    order: base + offset,
-  };
-};
-
-// 组件挂载时设置字体大小
-onMounted(() => {
-  document.documentElement.style.fontSize = `${resume.value.resumeSetting.fontSize}px`;
-});
-
-// 监听字体大小变化
-watch(
-  () => resume.value.resumeSetting.fontSize,
-  (newSize) => {
-    document.documentElement.style.fontSize = `${newSize}px`;
-  }
-);
 </script>
 
 <style scoped>
