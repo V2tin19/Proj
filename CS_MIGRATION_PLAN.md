@@ -13,10 +13,10 @@
 | 分支模型 | main + archived 的 frontend-dev / backend-dev 远端分支 | **仅 main 一条分支**(归档 tag 留底) |
 | 交付形态 | 浏览器访问服务端页面(web 模式) | **原生客户端**(Windows / Linux / Android)连接服务端 |
 | 服务端 | FastAPI:API + 前端静态托管 | FastAPI:**纯 API 服务**(静态托管下线) |
-| 访问控制 | 共享口令 X-Access-Code | **用户账号登录**(用户名/口令 → 令牌) |
+| 访问控制 | 共享口令 X-Access-Code | **自助注册 + 账号登录**(用户自助开户 → 令牌) |
 | 客户端 UI | Vue 3 SPA(浏览器) | **同一套 Vue 代码复用**为客户端 UI |
 
-不在本期范围(明确不做):iOS/macOS 客户端;客户端自动更新;自助注册(账号由管理员发放);服务端简历云端同步(见 §6.4,列为可选后续)。
+不在本期范围(明确不做):iOS/macOS 客户端;客户端自动更新;邮箱验证与邮件自助找回(v2,需 SMTP;v1 找回由运营方 CLI 重置兜底);服务端简历云端同步(见 §6.5,v1.5 强烈建议纳入)。
 
 ## 2. 现状基线:保留 / 废弃清单
 
@@ -70,11 +70,13 @@ main(唯一分支;远端 dev 分支删除,打 archive/* tag 留底)
 4. 验收:`git branch -a` 仅剩 main;tag 可随时恢复归档代码。
 
 ### Phase B 服务端 C/S 化(2-3 天)
-1. **账号与令牌(零新依赖)**:
+1. **账号体系(自助注册,零新依赖)**:
    - `users` 表(scrypt 哈希,`hashlib.scrypt` 标准库)+ `tokens` 表(随机 opaque 令牌,哈希落库,带过期/吊销);
+   - `POST /api/auth/register {username,password,email?}`:用户名格式与唯一性、密码强度校验、注册开关(§6.2)与邀请码校验;
    - `POST /api/auth/login {username,password}` → `{token, expiresAt, role}`;
-   - 首次启动从环境变量引导创建管理员(`ADMIN_USERNAME`/`ADMIN_PASSWORD`);
-   - 鉴权中间件从"共享口令比对"改为 `Authorization: Bearer <token>` 校验;401 语义不变;
+   - 防爆破:登录连续失败 5 次(按用户名+IP)锁定 15 分钟;注册/登录均纳入限流;
+   - 角色两级:`user`(注册默认)/ `admin`(运营者账号,首次启动从 `ADMIN_USERNAME`/`ADMIN_PASSWORD` 引导创建——这是运营方自己的管理员,不承担"给用户发号"职能);
+   - 鉴权中间件改为 `Authorization: Bearer <token>` 校验;401 语义不变;
    - 知识库管理接口收紧为 `role=admin`;生成/对话按**用户**限流(替代按 IP)。
 2. **API 契约**:backend-api.md 增补鉴权章节;`/api/health` 保持免鉴权(客户端探活)。
 3. **web 模式下线开关**:静态托管默认关闭(`SERVE_WEB=0`),迁移期可用环境变量临时打开;Phase F 物理删除。
@@ -86,7 +88,7 @@ main(唯一分支;远端 dev 分支删除,打 archive/* tag 留底)
 2. **UI 适配(改动集中在 4 处)**:
    - 新增「服务器设置」:服务端地址(http://host:8000)首次启动引导配置,存 Tauri store;
    - `agentAPI.ts` baseURL 与 `aiWorker.ts` fetch 改为 `{serverUrl}/api`;
-   - 登录页 + 令牌管理(替代 accessCode;401 全局拦截跳登录);
+   - 注册/登录页(双 Tab)+ 令牌管理(替代 accessCode;401 全局拦截跳登录);
    - Word 下载改走 Tauri 保存对话框插件(Android 复用同一抽象)。
 3. 打包:Windows(NSIS 安装包)/ Linux(deb + AppImage);免安装绿色版可选;
 4. 验收:双平台安装包在干净系统安装 → 配服务端地址 → 登录 → 生成/预览/PDF/Word 全链路。
@@ -112,17 +114,22 @@ main(唯一分支;远端 dev 分支删除,打 archive/* tag 留底)
 ### 6.1 鉴权为什么用 opaque 令牌而非 JWT
 吊销即删库一行、无需签名密钥管理、`secrets` + `hashlib.scrypt` 全标准库(**零新增依赖**,延续发行包零网络约束);单服务端实例下没有 JWT 的跨服务校验需求。
 
-### 6.2 令牌有效期与续期
-默认 7 天滑动过期(每次请求顺延);客户端 401 自动跳登录页。v1 不做 refresh token(时长足够,吊销能力强)。
+### 6.2 自助注册与账号安全(商业基线)
+- **注册即用**:用户名(4-32 位)+ 密码(≥8 位,须含字母与数字)+ 选填邮箱(为 v2 邮件验证/自助找回预留字段),注册成功即可登录使用;
+- **注册开关** `REGISTRATION_MODE=open|invite|closed`(默认 open):运营方可用邀请码控制放量节奏——这是商业产品的常规运营阀门,与"管理员发号"有本质区别;
+- **防爆破**:登录连续失败 5 次(用户名+IP 维度)锁定 15 分钟;注册/登录共享限流体系;
+- **密码存储** scrypt 加盐哈希(标准库实现,零新增依赖);令牌机制见 §6.1,默认 7 天滑动过期,401 自动跳登录,吊销即生效;
+- **角色**:`user` / `admin` 两级;admin 仅为运营者身份(内容运营、账号重置),与用户注册流程完全解耦;
+- 邮箱验证与邮件找回密码属 v2(需 SMTP);v1 找回由运营方 CLI 重置兜底。
 
 ### 6.3 多用户与知识库边界
-v1 维持**单共享知识库**(管理员维护),生成时全体用户可检索——与学生简历场景一致,避免 v1 引入按用户隔离的索引复杂度;`meta.knowledgeHits` 不变。
+v1 维持**共享知识库**,由运营方(admin)维护内容——RAG 语料质量控制属于运营职责,用户注册使用不受影响;按用户隔离知识库列为后续可选(`meta.knowledgeHits` 契约不变)。
 
 ### 6.4 简历数据归属
-v1 简历草稿**继续存客户端本地**(Tauri webview 的 localStorage,按设备隔离,天然离线可用);
-"换设备同步"列为后续可选(服务端加 resumes 表 + 同步接口,不影响本期)。
+用户注册后对"账号下有我的数据"存在合理预期:v1 草稿本地存储(离线可用、零服务端改动),
+**建议将最小云端草稿存档(save/load/list,约 1-1.5 人日)纳入 v1.5**,消除"注册了账号但数据只在本地"的体验落差。
 
-### 6.5 兼容窗口
+### 6.6 兼容窗口
 迁移期服务端同时支持 web(可显式打开)与 C/S 两态;Phase F 后仅 C/S。存量浏览器用户需换装客户端——发布通告由负责人把握节奏。
 
 ## 7. 客户端 UI 改动明细(供排期评估)
@@ -132,7 +139,7 @@ v1 简历草稿**继续存客户端本地**(Tauri webview 的 localStorage,按�
 | `client/src/api/agentAPI.ts` | baseURL 从常量改为响应式 serverUrl;登录/令牌拦截器 |
 | `client/src/worker/aiWorker.ts` | fetch 绝对地址 + 令牌头(自 postMessage 初始化参数取) |
 | `utils/accessCode.ts` + 设置页口令块 | **删除**,替换为登录态模块(`utils/auth.ts`) |
-| 新增 `views/login/` | 登录页 + 服务器地址引导(首次启动) |
+| 新增 `views/auth/` | 注册/登录双 Tab + 服务器地址引导(首次启动) |
 | `store/useSettingsStore.ts` | 增加 serverUrl / 登录态;Tauri store 持久化 |
 | Word 导出 `resumePreview.vue` | blob 锚点下载 → Tauri 保存对话框(桌面/移动统一封装) |
 | `Header` 引导文案 | 按客户端语境改写 |
@@ -164,7 +171,8 @@ v1 简历草稿**继续存客户端本地**(Tauri webview 的 localStorage,按�
 ## 10. 总验收清单
 
 - [ ] `git branch -a` 仅 main;archive tag 存在
-- [ ] 服务端:登录/令牌/角色/按用户限流全通过;pytest 全绿;web 托管已移除
+- [ ] 服务端:自助注册/登录/令牌/角色/按用户限流全通过;pytest 全绿;web 托管已移除
+- [ ] 自助注册闭环:新用户在客户端注册即用(唯一性/强度校验、防爆破锁定、注册开关生效)
 - [ ] Windows 安装包 + Linux deb/AppImage:干净系统安装即用,全链路可用
 - [ ] Android APK:Android 10+ 真机安装即用,全链路可用(含 SSE 流式对话)
 - [ ] 三平台共用同一套 Vue UI,业务功能与 web 时代对齐(生成/预览/PDF/Word/知识库[管理员])
