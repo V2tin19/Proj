@@ -1,6 +1,8 @@
 # C/S 化改造计划(Web/服务端模式 → 传统客户端/服务端模式)
 
-> 状态:**计划待批准**(本文档只描述方案,未实施)。
+> 状态:**执行中**——Phase A(部分)、B、C 离线部分已完成(见 git log);
+> Linux 客户端已交付(PyQt6 壳 + deb/Arch/tar.zst 三形态,rpm/AppImage 骨架);
+> Windows/Android 为骨架;阻塞项见 §8 网络边界。
 > 前序:[REFACTOR_PLAN.md](REFACTOR_PLAN.md)(web 单体加固)、[CHANGES.md](CHANGES.md)(分支基线以来的变更)。
 > 约束继承:**执行侧全程零网络**(见 §8 网络边界);iOS / macOS 不在支持范围。
 
@@ -34,7 +36,13 @@
 
 ## 3. 关键决策:客户端技术选型
 
-**推荐:Tauri 2(Rust 壳 + 复用现有 Vue 前端)**
+> **修订(Phase C 执行期)**:桌面端(Linux/Windows)壳层改为 **PyQt6 + QtWebEngine**——
+> 构建机已有该栈,**零网络、零新依赖**即可交付可运行客户端(已通过无头自检),且打包
+> 沿用服务端已验证的自包含发行包模式;PyQt6 本身跨平台,Windows 与 Linux 共用同一壳代码。
+> Tauri 2 降级为 **Android 端规划路线**(Qt 官方无 Android Python 绑定),骨架已留,
+> 工具链就位后启用。原 Tauri-everything 方案保留如下备查。
+
+**原推荐(备查):Tauri 2(Rust 壳 + 复用现有 Vue 前端)**
 
 | 方案 | Windows | Linux | Android | UI 复用 | 包体积 | 主要代价 |
 | --- | --- | --- | --- | --- | --- | --- |
