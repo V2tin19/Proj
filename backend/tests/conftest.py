@@ -11,6 +11,7 @@ import pytest
 # Ensure deterministic settings BEFORE app modules get imported.
 # (env vars take priority over any developer .env file)
 os.environ["ACCESS_CODE"] = ""
+os.environ["AUTH_MODE"] = "optional"  # 旧冒烟用例按匿名语义运行;auth 用例自行切换 required
 os.environ.pop("LLM_API_URL", None)
 os.environ.pop("LLM_API_KEY", None)
 os.environ.pop("OPENAI_COMPATIBLE_API_URL", None)
@@ -23,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 def isolate_data_dir(tmp_path, monkeypatch):
     """Point every test at a throwaway data directory (seed templates copied in)."""
     from app.config import settings
-    from app.services import kb_store
+    from app.services import auth_store, kb_store
 
     data_dir = tmp_path / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -33,7 +34,28 @@ def isolate_data_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "data_dir", data_dir)
     # 每个 test 独立数据库文件,重置 schema 初始化标志
     monkeypatch.setattr(kb_store, "_initialized", False)
+    monkeypatch.setattr(auth_store, "_initialized", False)
     yield data_dir
+
+
+@pytest.fixture(autouse=True)
+def clean_auth_state(monkeypatch):
+    """重置登录锁定台账、限流桶与注册模式,避免用例间串扰。"""
+    from app.config import settings
+    from app.middleware import RateLimitMiddleware
+    from app.services import auth as auth_service
+
+    monkeypatch.setattr(settings, "registration_mode", "open")
+    monkeypatch.setattr(settings, "invite_code", "")
+    monkeypatch.setattr(settings, "admin_username", "")
+    monkeypatch.setattr(settings, "admin_password", "")
+    monkeypatch.setattr(settings, "access_code", "")
+    monkeypatch.setattr(settings, "lockout_threshold", 5)
+    auth_service._locks.clear()
+    RateLimitMiddleware.reset()
+    yield
+    auth_service._locks.clear()
+    RateLimitMiddleware.reset()
 
 
 @pytest.fixture(autouse=True)

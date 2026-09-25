@@ -4,8 +4,11 @@
 >
 > **所有接口前缀**：`/api`
 >
-> **访问控制**：后端设置环境变量 `ACCESS_CODE` 后,除 `GET /api/health` 外的所有接口
-> 必须携带请求头 `X-Access-Code: <访问口令>`,否则返回 `401`。前端在「网站配置」页填入一次即可。
+> **鉴权(C/S 商业模式)**:默认 `AUTH_MODE=required`——除 `GET /api/health` 与 `/api/auth/*` 外,
+> 所有接口需携带 `Authorization: Bearer <token>`;账号通过 `POST /api/auth/register` **自助注册**获得。
+> 令牌 7 天滑动过期,`POST /api/auth/logout` 即时吊销;登录连续失败 5 次锁定 15 分钟。
+> 知识库管理接口(PUT/POST/DELETE)仅运营者角色 `admin` 可调用。
+> 迁移期兼容:`AUTH_MODE=optional` 允许匿名;设置 `ACCESS_CODE` 后仍接受旧 `X-Access-Code` 头(即将移除)。
 >
 > **交互式文档**：启动服务后访问 `http://localhost:8000/docs`（Swagger UI），可在线调试所有接口
 
@@ -611,3 +614,71 @@ LLM_API_URL=http://localhost:11434/v1/chat/completions
 LLM_API_KEY=ollama
 LLM_MODEL=qwen2.5:7b
 ```
+
+---
+
+## 9. 账号与鉴权
+
+### 9.1 注册（自助）
+
+#### `POST /api/auth/register`
+
+**请求体**
+
+```json
+{
+  "username": "alice01",
+  "password": "passw0rd123",
+  "email": "alice@example.com",
+  "inviteCode": ""
+}
+```
+
+| 字段         | 类型   | 必填 | 说明                                       |
+| ------------ | ------ | ---- | ------------------------------------------ |
+| `username`   | string | 是   | 4-32 位字母/数字/下划线/连字符,全局唯一   |
+| `password`   | string | 是   | ≥8 位,须同时包含字母和数字                |
+| `email`      | string | 否   | 预留(v2 邮件验证/自助找回)               |
+| `inviteCode` | string | 否   | `REGISTRATION_MODE=invite` 时必填          |
+
+**响应** `201 Created`
+
+```json
+{
+  "token": "…",
+  "expiresAt": "2026-09-12T12:00:00+00:00",
+  "username": "alice01",
+  "role": "user"
+}
+```
+
+**错误**:`422` 格式/强度不合规;`409` 用户名已被注册;`403` 注册关闭或邀请码错误。
+
+### 9.2 登录
+
+#### `POST /api/auth/login`
+
+请求体 `{ "username": "...", "password": "..." }`,响应同注册。
+**错误**:`401` 用户名或密码不正确;`429` 连续失败 5 次触发 15 分钟锁定。
+
+### 9.3 当前登录态
+
+#### `GET /api/auth/me`
+
+携带 Bearer 令牌,返回 `{ "username": "...", "role": "user|admin", "email": "..." }`;未登录 `401`。
+
+### 9.4 退出登录
+
+#### `POST /api/auth/logout`
+
+吊销当前令牌(服务端删除),返回 `{ "ok": true }`。
+
+### 9.5 鉴权相关环境变量
+
+| 变量                | 默认值   | 说明                                        |
+| ------------------- | -------- | ------------------------------------------- |
+| `AUTH_MODE`         | `required` | `required` 登录制;`optional` 迁移期匿名兼容 |
+| `REGISTRATION_MODE` | `open`   | `open` / `invite`(邀请码)/ `closed`      |
+| `AUTH_INVITE_CODE`  | 空       | invite 模式的邀请码                         |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 空 | 首次启动创建运营者账号(知识库管理)    |
+| `ACCESS_CODE`       | 空       | [legacy] 旧共享口令,迁移期兼容,待移除      |

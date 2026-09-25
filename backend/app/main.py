@@ -13,23 +13,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from app.config import settings
-from app.middleware import AccessCodeMiddleware, RateLimitMiddleware
-from app.routes import chat, export, health, knowledge_base, resume, templates
+from app.middleware import AuthMiddleware, RateLimitMiddleware
+from app.routes import auth, chat, export, health, knowledge_base, resume, templates
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: data dir + SQLite schema + legacy migration + model warmup
+    # Startup: data dir + SQLite schema + legacy migration + model warmup + auth bootstrapping
     settings.data_dir.mkdir(parents=True, exist_ok=True)
 
     import asyncio
 
     from app.services import embedding_service, kb_store
+    from app.services import auth as auth_service
+    from app.services import auth_store
     from app.services.kb_store import init_db, migrate_from_json
 
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, init_db)
     await loop.run_in_executor(None, migrate_from_json)
+    await loop.run_in_executor(None, auth_store.init_db)
+    await loop.run_in_executor(None, auth_service.bootstrap_admin)
+    await loop.run_in_executor(None, auth_store.purge_expired_tokens)
     embedding_service.warmup_async()
 
     yield
@@ -46,7 +51,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# add_middleware: last added = outermost = runs first on the request path
+# add_middleware: last added = outermost = runs first on the request path.
+# 期望顺序:CORS(最外) → Auth(解析用户) → RateLimit(按用户键控) → 路由
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -54,10 +62,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimitMiddleware)
-app.add_middleware(AccessCodeMiddleware)
 
 app.include_router(health.router, prefix="/api", tags=["Health"])
+app.include_router(auth.router, prefix="/api", tags=["Auth"])
 app.include_router(templates.router, prefix="/api", tags=["Templates"])
 app.include_router(knowledge_base.router, prefix="/api", tags=["Knowledge Base"])
 app.include_router(resume.router, prefix="/api", tags=["Resume Generation"])

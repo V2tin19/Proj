@@ -40,10 +40,24 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # 访问控制 / 限流
     # ------------------------------------------------------------------
-    # 留空 = 不启用鉴权;设置后所有 /api 业务接口要求 X-Access-Code 头
+    # required = 商业模式:除 health/auth 外所有接口需 Bearer 令牌(或旧口令兼容);
+    # optional = 迁移期兼容:允许匿名访问(配合旧 X-Access-Code 门禁使用)
+    auth_mode: str = "required"
+    # [legacy 迁移期] 旧版共享口令;设置后仍接受 X-Access-Code 头(Phase F 移除)
     access_code: str = ""
     # 每分钟每 IP 允许的生成/对话类请求数
     rate_limit_per_minute: int = 30
+
+    # ------------------------------------------------------------------
+    # 账号体系(自助注册)
+    # ------------------------------------------------------------------
+    registration_mode: str = "open"  # open|invite|closed
+    invite_code: str = ""            # registration_mode=invite 时必填
+    admin_username: str = ""         # 首次启动引导创建运营者账号
+    admin_password: str = ""
+    token_ttl_days: int = 7
+    lockout_threshold: int = 5       # 连续失败 N 次锁定
+    lockout_minutes: int = 15
 
     # ------------------------------------------------------------------
     # 超时(秒)

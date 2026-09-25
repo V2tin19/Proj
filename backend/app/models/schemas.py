@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, List, Literal, Optional
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -218,3 +219,39 @@ class HealthResponse(BaseModel):
     provider: str
     embedding: str = "unknown"
     auth: str = "disabled"
+
+
+# ---------------------------------------------------------------------------
+# 账号与鉴权(C/S 商业模式)
+# ---------------------------------------------------------------------------
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=4, max_length=32, pattern=r"^[A-Za-z0-9_-]+$")
+    password: str = Field(..., min_length=8, max_length=128)
+    email: str = Field(default="", max_length=254)
+    inviteCode: str = Field(default="", max_length=64)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"[0-9]", v):
+            raise ValueError("密码须同时包含字母和数字")
+        return v
+
+
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1, max_length=32)
+    password: str = Field(..., min_length=1, max_length=128)
+
+
+class AuthResponse(BaseModel):
+    token: str
+    expiresAt: str
+    username: str
+    role: Literal["user", "admin"]
+
+
+class AuthMeResponse(BaseModel):
+    username: str
+    role: Literal["user", "admin"]
+    email: str = ""
