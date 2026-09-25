@@ -1,5 +1,5 @@
 # AI Resume Server - Windows 自包含发行包构建(零网络)
-# 在 Windows 机器(已安装 Python 3.11+ 并建好 backend\.venv、frontend\dist)上执行:
+# 在 Windows 机器(已安装 Python 3.11+ 并建好 backend\.venv、client\dist)上执行:
 #   powershell -ExecutionPolicy Bypass -File backend\scripts\build_release.ps1            # lite
 #   powershell -ExecutionPolicy Bypass -File backend\scripts\build_release.ps1 -Full      # full
 # 产出: dist-release\ai-resume-server-windows-x86_64-<lite|full>.zip
@@ -14,7 +14,7 @@ $backend = Join-Path $root "backend"
 $venvSite = Join-Path $backend ".venv\Lib\site-packages"
 
 if (-not (Test-Path $venvSite)) { Write-Error "未找到 $venvSite(请先 pip install -r requirements.txt)" }
-if (-not (Test-Path (Join-Path $root "frontend\dist\index.html"))) { Write-Error "缺少 frontend\dist\index.html(请先 npm run build)" }
+if (-not (Test-Path (Join-Path $root "client\dist\index.html"))) { Write-Error "缺少 client\dist\index.html(请先 npm run build)" }
 
 $variant = if ($Full) { "full" } else { "lite" }
 $name    = "ai-resume-server-windows-x86_64-$variant"
@@ -28,7 +28,7 @@ New-Item -ItemType Directory -Force -Path `
 
 Copy-Item -Recurse -Force (Join-Path $backend "app")     "$stage\app"
 Copy-Item (Join-Path $backend "data\*.json")              "$stage\data"
-Copy-Item -Recurse -Force (Join-Path $root "frontend\dist") "$stage\static"
+Copy-Item -Recurse -Force (Join-Path $root "client\dist") "$stage\static"
 Copy-Item -Recurse -Force (Join-Path $root "deploy")      "$stage\deploy"
 Copy-Item -Force (Join-Path $root ".env.example")         "$stage\.env.example"
 Copy-Item -Force (Join-Path $root "deploy\README-DEPLOY.md") "$stage\README-DEPLOY.md"

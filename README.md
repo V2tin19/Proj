@@ -34,7 +34,7 @@
 ├── TEAM_GUIDE.md                     # 团队协作指南
 ├── .env.example                      # 环境变量模板
 ├── backend/                          # Python 后端(app/、tests/、scripts/build_release.sh)
-├── frontend/                         # Vue 前端(构建产物 dist/ 由后端托管)
+├── client/                         # Vue 前端(构建产物 dist/ 由后端托管)
 └── deploy/                           # 标准部署脚本(install.sh、systemd、windows/)
 ```
 
@@ -45,7 +45,7 @@
 在构建机（或本仓库所在机器）打一个包，拷到目标机解压即用：
 
 ```bash
-# 构建机(已具备 backend/.venv 与 frontend/dist,全程离线):
+# 构建机(已具备 backend/.venv 与 client/dist,全程离线):
 ./backend/scripts/build_release.sh          # lite 包(约 120MB,默认)
 ./backend/scripts/build_release.sh --full   # full 包(含向量检索,约 500MB)
 
@@ -76,7 +76,7 @@ cp ../.env.example .env      # 编辑填入 LLM 配置
 前端（Node 仅开发构建时需要，运行时不需要）：
 
 ```bash
-cd frontend
+cd client
 npm ci && npm run dev        # http://localhost:5173,代理 /api 到 8000
 npm run build                # 产出 dist/,由后端(或任意静态服务器)托管
 ```
@@ -130,7 +130,7 @@ npm run build                # 产出 dist/,由后端(或任意静态服务器)�
 
 ## 8. 关于 Node.js 的结论
 
-- **运行时不需要 Node**：前端是构建后的纯静态文件(`frontend/dist`),由后端 FastAPI 直接托管,单端口 8000。
+- **运行时不需要 Node**：前端是构建后的纯静态文件(`client/dist`),由后端 FastAPI 直接托管,单端口 8000。
 - **构建时仅在修改前端源码时需要 Node**(开发机上 `npm run build`);发行包内已含构建产物,服务器与部署流程零 Node。
 - **是否替换前端技术栈：否。** Vue 组件化、5 套简历模板与交互逻辑迁移等于全量重写,在发布窗口内风险极高且无收益;
   Node 只存在于开发机构建环节,不进入生产链路。若未来团队完全停止前端迭代,才存在"去 Node"的可能。
@@ -141,7 +141,7 @@ npm run build                # 产出 dist/,由后端(或任意静态服务器)�
 # 后端(backend/ 目录,虚拟环境内)
 pytest                       # 62+ 用例:纯函数/SSE/中间件/知识库/静态托管/API 冒烟
 
-# 前端(frontend/ 目录)
+# 前端(client/ 目录)
 npm run test                 # vitest:安全渲染/纯函数/口令存取
 npm run build                # vue-tsc 严格类型检查 + 生产构建
 ```
@@ -165,6 +165,6 @@ journalctl -u ai-resume -f                       # 日志
 pytest                                           # 单元测试
 python test_api.py                               # API 冒烟(需服务已启动)
 
-# 前端开发(frontend/)
+# 前端开发(client/)
 npm run dev / build / test
 ```

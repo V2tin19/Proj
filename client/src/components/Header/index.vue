@@ -62,7 +62,7 @@ const tourOpen = ref(false);
 const tourSteps: TourProps["steps"] = [
   {
     title: "网站配置",
-    description: "在网站配置中可设置访问口令与主题;AI 能力由后端统一配置。",
+    description: "右上角可注册/登录账号;在网站配置中可切换服务端地址与主题。",
     target: () => setting.value,
   },
   {

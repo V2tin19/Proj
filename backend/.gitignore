@@ -53,3 +53,6 @@ data/vector-store.json
 data/kb.sqlite3
 data/kb.sqlite3-wal
 data/kb.sqlite3-shm
+data/auth.sqlite3
+data/auth.sqlite3-wal
+data/auth.sqlite3-shm

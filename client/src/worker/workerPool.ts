@@ -1,8 +1,14 @@
 import type { DialogueHistory } from "../types/aiDialogue";
 
+export interface WorkerAuthContext {
+  serverBase: string;
+  token: string;
+}
+
 interface QueueTask {
   taskId: number;
   messages: DialogueHistory;
+  auth: WorkerAuthContext;
   onResponse: (responseText: string, isComplete: boolean, error?: boolean) => void;
 }
 
@@ -31,17 +37,18 @@ export class WorkerPool {
    */
   execute(
     messages: DialogueHistory,
-    onResponse: (responseText: string, isComplete: boolean, error?: boolean) => void
+    onResponse: (responseText: string, isComplete: boolean, error?: boolean) => void,
+    auth: WorkerAuthContext = { serverBase: "", token: "" }
   ): void {
     const taskId = this.nextTaskId++;
-    this.queue.push({ taskId, messages, onResponse });
+    this.queue.push({ taskId, messages, auth, onResponse });
     this.processQueue();
   }
 
   private processQueue() {
     if (this.queue.length === 0 || this.workers.length === 0) return;
     const worker = this.workers.pop()!;
-    const { taskId, messages, onResponse } = this.queue.shift()!;
+    const { taskId, messages, auth, onResponse } = this.queue.shift()!;
     this.activeTasks++;
     try {
       // postMessage 用结构化克隆;显式克隆一份防止调用方继续修改
@@ -55,7 +62,7 @@ export class WorkerPool {
           this.processQueue();
         }
       };
-      worker.postMessage({ taskId, messages: clonedMessages });
+      worker.postMessage({ taskId, messages: clonedMessages, ...auth });
     } catch (error) {
       this.activeTasks--;
       onResponse("数据传输失败", true, true);

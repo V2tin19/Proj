@@ -13,7 +13,7 @@
 #
 # 说明:
 #   - 必须在“目标平台同架构”的机器上构建(linux-x86_64 之外用 build_release.ps1)
-#   - 依赖:仓库内 backend/.venv(已安装全部依赖)与 frontend/dist(已构建)
+#   - 依赖:仓库内 backend/.venv(已安装全部依赖)与 client/dist(已构建)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -46,8 +46,8 @@ if [ ! -d "$VENV_SITE" ] || [ ! -d "$PY_LIB_DIR" ]; then
   echo "  stdlib   : $PY_LIB_DIR" >&2
   exit 1
 fi
-if [ ! -f "$ROOT/frontend/dist/index.html" ]; then
-  echo "错误: 缺少 frontend/dist/index.html — 请先在开发机执行 npm run build" >&2
+if [ ! -f "$ROOT/client/dist/index.html" ]; then
+  echo "错误: 缺少 client/dist/index.html — 请先在开发机执行 npm run build" >&2
   exit 1
 fi
 VARIANT=$([ "$FULL" = 1 ] && echo full || echo lite)
@@ -64,7 +64,7 @@ mkdir -p "$STAGE"/{app,static,runtime/bin,runtime/lib,data,deploy}
 cp -rT "$BACKEND/app" "$STAGE/app"
 cp "$BACKEND"/data/*.json "$STAGE/data/"
 # ---------- 2) 前端构建产物 ----------
-cp -rT "$ROOT/frontend/dist" "$STAGE/static"
+cp -rT "$ROOT/client/dist" "$STAGE/static"
 # ---------- 3) 部署脚本与配置模板 ----------
 cp -rT "$ROOT/deploy" "$STAGE/deploy"
 cp "$ROOT/.env.example" "$STAGE/.env.example"

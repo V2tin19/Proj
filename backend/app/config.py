@@ -87,7 +87,7 @@ class Settings(BaseSettings):
         if self.static_dir:
             path = Path(self.static_dir)
             return path if path.is_dir() else None
-        for candidate in (BASE_DIR / "static", BASE_DIR.parent / "frontend" / "dist"):
+        for candidate in (BASE_DIR / "static", BASE_DIR.parent / "client" / "dist"):
             if (candidate / "index.html").is_file():
                 return candidate
         return None

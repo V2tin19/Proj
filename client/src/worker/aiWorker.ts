@@ -1,17 +1,17 @@
 // AI Worker — 转发对话请求到后端 /api/chat(SSE 流式代理)。
 // 协议:事件以空行分隔;同一事件内的多行 data 用 \n 还原(换行不丢失);
 // 终止符 data: [DONE];任何网络/超时错误都以 error 标记回报,绝不悬挂 UI。
-import { getAccessCode } from "../utils/accessCode";
-
 const REQUEST_TIMEOUT_MS = 125_000; // 后端 chat 上游超时 120s,留 5s 余量
 
 interface WorkerIncoming {
   taskId: number;
   messages: Array<{ role: string; content: string }>;
+  serverBase: string; // 服务端地址,留空 = 同源
+  token: string;      // Bearer 令牌(工作线程无法读 localStorage,由主线程随任务下发)
 }
 
 self.onmessage = async (event: MessageEvent<WorkerIncoming>) => {
-  const { taskId, messages } = event.data;
+  const { taskId, messages, serverBase, token } = event.data;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -20,11 +20,11 @@ self.onmessage = async (event: MessageEvent<WorkerIncoming>) => {
   };
 
   try {
-    const response = await fetch("/api/chat", {
+    const response = await fetch(`${serverBase}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Access-Code": getAccessCode(),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ messages, stream: true }),
       signal: controller.signal,
