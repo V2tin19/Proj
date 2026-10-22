@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -94,12 +95,11 @@ async def spa_fallback(full_path: str):
     if full_path == "api" or full_path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not Found")
 
-    candidate = (static / full_path).resolve()
-    if (
-        full_path
-        and str(candidate).startswith(str(static.resolve()))
-        and candidate.is_file()
-    ):
+    static_root = static.resolve()
+    if full_path.startswith(('/', '\\')) or '..' in Path(full_path).parts:
+        raise HTTPException(status_code=404, detail='Not Found')
+    candidate = (static_root / full_path).resolve()
+    if candidate.is_file() and candidate.is_relative_to(static_root):
         return FileResponse(candidate)
 
     # 带扩展名的路径视为静态资源请求,缺失时 404,不回退 index.html

@@ -30,6 +30,7 @@ export const useSettingsStore = defineStore(
     };
 
     watch(isDark, (value) => {
+      localStorage.setItem('theme', value ? 'dark' : 'light');
       applyTheme(value);
     });
 

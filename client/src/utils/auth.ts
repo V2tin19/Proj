@@ -76,11 +76,26 @@ export function markAuthSkipped(): void {
   safeSet(SKIPPED_KEY, "1");
 }
 
+
 // ---------------------------------------------------------- 服务端地址
 
+export function isTauriEnv(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    Boolean(
+      (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ ||
+      (window as unknown as { __TAURI__?: unknown }).__TAURI__
+    )
+  );
+}
+
 export function getServerBase(): string {
-  // 去除尾部斜杠,便于拼接 `${base}/api/...`
-  return safeGet(SERVER_URL_KEY).replace(/\/+$/, "");
+  const configured = safeGet(SERVER_URL_KEY).replace(/\/+$/, "");
+  if (configured) return configured;
+  if (isTauriEnv()) {
+    return "http://127.0.0.1:8000";
+  }
+  return "";
 }
 
 export function setServerBase(url: string): void {

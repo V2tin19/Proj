@@ -10,10 +10,12 @@
     "dev": "vite --open",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
+    "@tauri-apps/api": "^2.12.4",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.7.9",
     "chroma-js": "^3.1.2",
@@ -26,6 +28,7 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
     "@types/chroma-js": "^3.1.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/test-utils": "^2.4.6",

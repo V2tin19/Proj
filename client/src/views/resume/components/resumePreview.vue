@@ -285,12 +285,13 @@ const exportToPDF = async () => {
   content.style.backgroundColor = "#ffffff";
   content.style.color = "#333333";
 
-  // 独立 app 实例渲染当前模板;finally 中统一清理,杜绝容器/实例泄漏
-  const mod = (await importFunc()) as { default: ComponentOptions };
-  const app = createApp(mod.default, {
-    colorShades: colorShades.value,
-  });
+  let app: ReturnType<typeof createApp> | null = null;
   try {
+    // 独立 app 实例渲染当前模板;finally 中统一清理,杜绝容器/实例泄漏
+    const mod = (await importFunc()) as { default: ComponentOptions };
+    app = createApp(mod.default, {
+      colorShades: colorShades.value,
+    });
     app.mount(content);
     tempContainer.appendChild(content);
     await nextTick();
@@ -321,7 +322,7 @@ const exportToPDF = async () => {
     console.error('PDF 导出失败:', error);
     message.error('PDF 导出失败，请重试');
   } finally {
-    app.unmount();
+    app?.unmount();
     tempContainer.remove();
     exportingPdf.value = false;
   }

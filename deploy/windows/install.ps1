@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 $src = $PSScriptRoot
 
-if (-not (Test-Path (Join-Path $src "runtime\python.exe"))) {
+if (-not (Test-Path (Join-Path $src "..\runtime\python.exe"))) {
     Write-Error "未找到 runtime\python.exe,请在解压后的发行包根目录的 deploy 目录内执行"
 }
 if (-not (Test-Path (Join-Path $src "..\app\main.py"))) {

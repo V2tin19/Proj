@@ -42,7 +42,6 @@
           v-model:checked="settingsStore.isDark"
           checked-children="深色"
           un-checked-children="浅色"
-          @change="settingsStore.toggleTheme"
         />
       </div>
 
