@@ -3,9 +3,11 @@
 #   powershell -ExecutionPolicy Bypass -File backend\scripts\build_release.ps1            # lite
 #   powershell -ExecutionPolicy Bypass -File backend\scripts\build_release.ps1 -Full      # full
 # 产出: dist-release\ai-resume-server-windows-x86_64-<lite|full>.zip
+#   -Stage <dir>  不打 zip,直接把发行包布局暂存到指定目录(供 Tauri resources 使用)
 param(
     [switch]$Full,
-    [string]$Out = (Join-Path $PSScriptRoot "..\..\dist-release")
+    [string]$Out = (Join-Path $PSScriptRoot "..\..\dist-release"),
+    [string]$Stage = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,13 +20,14 @@ if (-not (Test-Path (Join-Path $root "client\dist\index.html"))) { Write-Error "
 
 $variant = if ($Full) { "full" } else { "lite" }
 $name    = "ai-resume-server-windows-x86_64-$variant"
-$stage   = Join-Path ([System.IO.Path]::GetTempPath()) "$name"
+$stage   = if ($Stage -ne "") { $Stage } else { Join-Path ([System.IO.Path]::GetTempPath()) "$name" }
 
 Write-Host "== 构建发行包: $name =="
+Write-Host "   布局目录: $stage"
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
-New-Item -ItemType Directory -Force -Path `
-    "$stage\app", "$stage\static", "$stage\deploy", "$stage\data", `
-    "$stage\runtime\Lib\site-packages" | Out-Null
+# 只预建 data 与 runtime;app/static/deploy 由下方 Copy-Item 直接落位
+# (PowerShell 目标目录已存在时会把源拷成子目录,先建后拷会嵌套一层)
+New-Item -ItemType Directory -Force -Path "$stage\data", "$stage\runtime" | Out-Null
 
 Copy-Item -Recurse -Force (Join-Path $backend "app")     "$stage\app"
 Copy-Item (Join-Path $backend "data\*.json")              "$stage\data"
@@ -33,12 +36,15 @@ Copy-Item -Recurse -Force (Join-Path $root "deploy")      "$stage\deploy"
 Copy-Item -Force (Join-Path $root ".env.example")         "$stage\.env.example"
 Copy-Item -Force (Join-Path $root "deploy\README-DEPLOY.md") "$stage\README-DEPLOY.md"
 
-# 解释器:venv 的 python.exe + 官方安装目录的 Lib(标准库)
-$pyExe = (Join-Path $backend ".venv\Scripts\python.exe")
-Copy-Item $pyExe "$stage\runtime\python.exe"
-$home_dir = (Split-Path (Split-Path $pyExe))   # venv\Scripts -> venv -> 由 pyvenv.cfg 读取 home
+# 解释器:基础安装的 python.exe(venv 的 exe 是重定向器,离开 pyvenv.cfg 无法启动)
+# + 官方安装目录的 Lib(标准库,注意用 \* 拷内容,否则 PowerShell 会嵌套成 Lib\Lib)
+# + DLLs(C 扩展模块,_socket/ssl 等运行必需)。基础 exe 以自身目录为 prefix,可移植。
 $baseHome = (Get-Content (Join-Path $backend ".venv\pyvenv.cfg") | Select-String "^home\s*=\s*(.+)$").Matches[0].Groups[1].Value.Trim()
-Copy-Item -Recurse -Force (Join-Path $baseHome "Lib") "$stage\runtime\Lib"
+Copy-Item (Join-Path $baseHome "python.exe") "$stage\runtime\python.exe"
+Copy-Item -Recurse -Force (Join-Path $baseHome "DLLs") "$stage\runtime\DLLs"
+New-Item -ItemType Directory -Force -Path "$stage\runtime\Lib\site-packages" | Out-Null
+Copy-Item -Force (Join-Path $baseHome "Lib\*.py") "$stage\runtime\Lib\"
+Copy-Item -Recurse -Force (Join-Path $baseHome "Lib\*") "$stage\runtime\Lib\" -Exclude "__pycache__"
 # python3.dll / python313.dll 与 vcruntime 跟随解释器,一并拷贝
 Get-ChildItem $baseHome -Filter "python*.dll" | Copy-Item -Destination "$stage\runtime"
 Get-ChildItem $baseHome -Filter "vcruntime*.dll" | Copy-Item -Destination "$stage\runtime"
@@ -62,6 +68,11 @@ Get-ChildItem $stage -Recurse -Directory -Filter "__pycache__" |
 
 # 自举验证
 & "$stage\runtime\python.exe" -c "import fastapi, uvicorn, numpy, docx, pypdf; print('runtime OK')"
+
+if ($Stage -ne "") {
+    Write-Host "== 完成(Stage 模式,未压缩): $stage =="
+    exit 0
+}
 
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $zip = Join-Path $Out "$name.zip"
