@@ -5,6 +5,21 @@
     </a-alert>
 
     <template v-else>
+      <!-- 桌面端:提示内置管理员账号(本机服务端由桌面壳自动拉起) -->
+      <a-alert
+        v-if="builtinAdmin && !isAdminSession"
+        type="info"
+        show-icon
+        class="config-alert"
+        message="本机服务端内置管理员账号"
+      >
+        <template #description>
+          用户名 <code>{{ builtinAdmin.user }}</code> · 初始密码
+          <code>{{ builtinAdmin.password }}</code>(登录后可在「模型服务」配置模型;密码同步保存在数据目录
+          admin-credentials.txt)。
+        </template>
+      </a-alert>
+
       <div class="form-section">
         <div class="section-title"><span>当前模型服务</span></div>
         <div class="status-grid">
@@ -80,9 +95,27 @@ import {
   type LlmTestResult
 } from '../../../api/agentAPI';
 import { useBackendHealth } from '../../../composables/useBackendHealth';
+import { getSessionUser, isTauriEnv } from '../../../utils/auth';
 
 const health = useBackendHealth();
 const isServerReachable = computed(() => health.status.value !== 'down');
+const isAdminSession = getSessionUser()?.role === 'admin';
+
+// 桌面端内置管理员账号(壳拉起后端时生成,见 Rust ensure_admin_credentials)
+const builtinAdmin = ref<{ user: string; password: string } | null>(null);
+if (isTauriEnv()) {
+  void (async () => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      const info = await invoke<{ managed: boolean; adminUser: string; adminPassword: string }>('backend_info');
+      if (info?.managed && info.adminPassword) {
+        builtinAdmin.value = { user: info.adminUser, password: info.adminPassword };
+      }
+    } catch {
+      /* 非 Tauri 环境或命令不可用,忽略 */
+    }
+  })();
+}
 
 const providerText = computed(() => {
   if (health.status.value === 'down') return '离线';

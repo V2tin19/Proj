@@ -89,9 +89,20 @@ export function isTauriEnv(): boolean {
   );
 }
 
+const AUTO_SERVER_KEY = "server.auto"; // 桌面壳注入的本机后端地址(backend_info)
+let autoServerBase = safeGet(AUTO_SERVER_KEY);
+
+/** Tauri 壳启动时注入后端地址(main.ts bootstrap 调用) */
+export function setAutoServerBase(url: string): void {
+  autoServerBase = url.replace(/\/+$/, "");
+  safeSet(AUTO_SERVER_KEY, autoServerBase);
+}
+
 export function getServerBase(): string {
+  // 用户手填的地址优先(连接自建服务端),其次是桌面壳注入的本机后端
   const configured = safeGet(SERVER_URL_KEY).replace(/\/+$/, "");
   if (configured) return configured;
+  if (autoServerBase) return autoServerBase;
   if (isTauriEnv()) {
     return "http://127.0.0.1:8000";
   }
