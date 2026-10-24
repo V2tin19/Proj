@@ -1,0 +1,65 @@
+# Android APK 构建草稿(暂不启用)
+#
+# 说明:
+# - Android 端仍处骨架阶段,从未构建成功;当前产品交付主线为 Windows 桌面。
+# - 桌面端的"内嵌后端 sidecar"架构不适用于 Android:移动端应连接远程服务器
+#   (在客户端"账号与设置-服务端地址"配置),立项时需先定移动端架构。
+# - 已知阻塞:android-actions/setup-android@v3 在 ubuntu-latest 上报
+#   "Failed to find package 'tools'"(SDK 仓库布局变更)。新版 runner 预装
+#   Android SDK,可尝试直接删除该步骤。
+#
+# 本工作流仅 workflow_dispatch 手动触发,不会随 push/tag 运行。
+name: Android Draft (not enabled)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-mobile-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Install Frontend Dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build Frontend Web Assets
+        working-directory: client
+        run: npm run build
+
+      - name: Init and Build Android APK
+        working-directory: client
+        run: |
+          npx tauri android init
+          npx tauri android build --apk
+        env:
+          NDK_HOME: ${{ steps.setup-android.outputs.ndk-path }}
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Resume-Android-APK
+          path: client/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
