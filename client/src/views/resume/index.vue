@@ -14,7 +14,7 @@
     <div class="left" :class="{ 'is-mobile-hidden': mobilePane !== 'edit' }">
       <div class="btn-group">
         <a-popconfirm
-          title="填充会覆盖当前数据，确定吗？"
+          title="将载入示例数据，会覆盖当前内容，确定吗？"
           ok-text="确定"
           cancel-text="取消"
           @confirm="resumeStore.autoFillData"
@@ -22,7 +22,7 @@
           <template #icon><question-circle-outlined style="color: red" /></template>
           <a-button type="primary" ghost>
             <eye-outlined />
-            预览填充
+            载入示例
           </a-button>
         </a-popconfirm>
 
@@ -41,7 +41,7 @@
 
         <a-button type="default" @click="resumeStore.exportData">
           <download-outlined />
-          导出JSON
+          导出数据
         </a-button>
 
         <a-upload
@@ -52,7 +52,7 @@
         >
           <a-button type="dashed">
             <upload-outlined />
-            导入JSON
+            导入数据
           </a-button>
         </a-upload>
       </div>

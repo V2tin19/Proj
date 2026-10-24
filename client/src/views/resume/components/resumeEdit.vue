@@ -42,6 +42,7 @@ import type { Component } from 'vue';
 import { MenuOutlined } from '@ant-design/icons-vue';
 import { useResumeStore } from '../../../store';
 import type { SectionKey } from '../../../types/resume';
+import { sectionLabels } from '../../../constants/sectionLabels';
 import personalInfo from './personalInfo.vue';
 import education from './education.vue';
 import workExperience from './workExperience.vue';
@@ -57,13 +58,13 @@ type ModuleDefinition = {
 };
 
 const moduleDefinitions: ModuleDefinition[] = [
-  { key: 'personalInfo', label: '个人信息', component: personalInfo },
-  { key: 'education', label: '教育经历', component: education },
-  { key: 'projects', label: '项目经历', component: project },
-  { key: 'workExperience', label: '工作经历', component: workExperience },
-  { key: 'skills', label: '专业技能', component: skill },
-  { key: 'honors', label: '荣誉奖项', component: honor },
-  { key: 'summary', label: '自我评价', component: selfEvaluation }
+  { key: 'personalInfo', label: sectionLabels.personalInfo, component: personalInfo },
+  { key: 'education', label: sectionLabels.education, component: education },
+  { key: 'projects', label: sectionLabels.projects, component: project },
+  { key: 'workExperience', label: sectionLabels.workExperience, component: workExperience },
+  { key: 'skills', label: sectionLabels.skills, component: skill },
+  { key: 'honors', label: sectionLabels.honors, component: honor },
+  { key: 'summary', label: sectionLabels.summary, component: selfEvaluation }
 ];
 
 const moduleMap = new Map<SectionKey, ModuleDefinition>(

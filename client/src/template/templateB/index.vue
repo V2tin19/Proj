@@ -64,7 +64,7 @@
 
     <!-- 技能特长 -->
     <section class="section" v-if="resume.skills.length" :style="sectionStyle('skills')">
-      <h2 class="section-title">技能特长</h2>
+      <h2 class="section-title">{{ sectionLabels.skills }}</h2>
       <ul class="skill-list">
         <li v-for="skill in resume.skills" :key="skill.id">{{ skill.skillName }}</li>
       </ul>
@@ -72,7 +72,7 @@
 
     <!-- 工作/实习经历 -->
     <section class="section" v-if="resume.workExperience.length" :style="sectionStyle('workExperience')">
-      <h2 class="section-title">工作/实习经历</h2>
+      <h2 class="section-title">{{ sectionLabels.workExperience }}</h2>
       <div class="experience-list">
         <div class="experience-item" v-for="work in resume.workExperience" :key="work.id">
           <div class="item-header">
@@ -90,7 +90,7 @@
 
     <!-- 项目经验 -->
     <section class="section" v-if="resume.projects.length" :style="sectionStyle('projects')">
-      <h2 class="section-title">项目经验</h2>
+      <h2 class="section-title">{{ sectionLabels.projects }}</h2>
       <div class="experience-list">
         <div class="experience-item" v-for="project in resume.projects" :key="project.id">
           <div class="item-header">
@@ -118,6 +118,7 @@
 <script setup lang="ts">
 import { safeMarked } from '@/utils/safeMarked';
 import { useResumeStyle } from '@/composables/useResumeStyle';
+import { sectionLabels } from '@/constants/sectionLabels';
 
 // 公共取数/样式/字号逻辑见 composables/useResumeStyle.ts
 const { resume, resumeStyle, sectionStyle } = useResumeStyle();

@@ -47,7 +47,7 @@
       </div>
 
       <div class="side-section" v-if="resume.education.length" :style="sectionStyle('education')">
-        <h2 class="side-title">教育背景</h2>
+        <h2 class="side-title">{{ sectionLabels.education }}</h2>
         <div class="education-item" v-for="edu in resume.education" :key="edu.id">
           <h3>{{ edu.school }}</h3>
           <p class="edu-major">{{ edu.major }}</p>
@@ -57,7 +57,7 @@
       </div>
 
       <div class="side-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
-        <h2 class="side-title">技能特长</h2>
+        <h2 class="side-title">{{ sectionLabels.skills }}</h2>
         <div class="skills-wrapper">
           <p class="skill-tag" v-for="skill in resume.skills" :key="skill.id" v-html="safeMarked(skill.skillName)"></p>
         </div>
@@ -67,7 +67,7 @@
     <!-- 主要内容区域 -->
     <main class="main-content">
       <section class="content-section" v-if="resume.summary" :style="sectionStyle('summary')">
-        <h2 class="section-title">个人简介</h2>
+        <h2 class="section-title">{{ sectionLabels.summary }}</h2>
         <p class="summary" v-html="safeMarked(resume.summary)"></p>
       </section>
 
@@ -85,7 +85,7 @@
       </section>
 
       <section class="content-section" v-if="resume.projects.length" :style="sectionStyle('projects')">
-        <h2 class="section-title">项目经验</h2>
+        <h2 class="section-title">{{ sectionLabels.projects }}</h2>
         <div class="project-item" v-for="project in resume.projects" :key="project.id">
           <div class="proj-header">
             <h3>{{ project.projectName }}</h3>
@@ -114,6 +114,7 @@
 import { computed } from 'vue';
 import { safeMarked } from '@/utils/safeMarked';
 import { useResumeStyle } from '@/composables/useResumeStyle';
+import { sectionLabels } from '@/constants/sectionLabels';
 
 const { resume, resumeStyle, sectionStyle } = useResumeStyle();
 // 判断是否有联系方式信息

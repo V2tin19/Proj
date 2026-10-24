@@ -40,7 +40,7 @@
       <div class="section-icon">
         <i class="fas fa-user"></i>
       </div>
-      <h2 class="section-title">个人总结</h2>
+      <h2 class="section-title">{{ sectionLabels.summary }}</h2>
       <div class="section-content summary" v-html="safeMarked(resume.summary)"></div>
     </section>
 
@@ -109,7 +109,7 @@
       <div class="section-icon">
         <i class="fas fa-tools"></i>
       </div>
-      <h2 class="section-title">技能特长</h2>
+      <h2 class="section-title">{{ sectionLabels.skills }}</h2>
       <div class="section-content">
         <div class="skills-list">
           <p v-for="skill in resume.skills" :key="skill.id" class="skill-item" v-html="safeMarked(skill.skillName)"></p>
@@ -138,6 +138,7 @@ import { computed } from 'vue';
 import type { ColorShades } from '../../types/color';
 import { safeMarked } from '@/utils/safeMarked';
 import { useResumeStyle } from '@/composables/useResumeStyle';
+import { sectionLabels } from '@/constants/sectionLabels';
 
 // 接受父组件的主题色(响应式传入,换色即时生效)
 const props = defineProps<{

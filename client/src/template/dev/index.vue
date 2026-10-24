@@ -71,14 +71,14 @@
     </div>
 
     <div class="section skills-section" v-if="resume.skills.length" :style="sectionStyle('skills')">
-      <div class="section-title">技能特长</div>
+      <div class="section-title">{{ sectionLabels.skills }}</div>
       <div class="skills-list">
         <p v-for="skill in resume.skills" :key="skill.id" class="skill-item" v-html="safeMarked(skill.skillName)"></p>
       </div>
     </div>
 
     <div class="section projects-section" v-if="resume.projects.length" :style="sectionStyle('projects')">
-      <div class="section-title">项目经验</div>
+      <div class="section-title">{{ sectionLabels.projects }}</div>
       <div class="section-content">
         <div class="item" v-for="project in resume.projects" :key="project.id">
           <div class="project-header">
@@ -115,6 +115,7 @@ import { computed } from 'vue';
 import type { ColorShades } from '../../types/color';
 import { safeMarked } from '@/utils/safeMarked';
 import { useResumeStyle } from '@/composables/useResumeStyle';
+import { sectionLabels } from '@/constants/sectionLabels';
 
 // 接受父组件传递的主题色(响应式传入,换色即时生效)
 const props = defineProps<{
