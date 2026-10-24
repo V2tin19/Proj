@@ -607,9 +607,7 @@ onMounted(() => {
 .agent-page {
   min-height: calc(100vh - 60px);
   padding: 24px;
-  background:
-    radial-gradient(circle at top, rgba(45, 91, 255, 0.12), transparent 24%),
-    linear-gradient(180deg, #0a111b 0%, #070b12 100%);
+  background: var(--stage-gradient);
 }
 
 .workspace {
@@ -623,9 +621,8 @@ onMounted(() => {
 .right-panel {
   border-radius: 22px;
   border: 1px solid var(--border-color);
-  background:
-    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  background: var(--panel-gradient);
+  box-shadow: var(--panel-shadow);
 }
 
 .left-panel {
@@ -706,8 +703,8 @@ onMounted(() => {
   margin-bottom: 20px;
   padding: 18px;
   border-radius: 16px;
-  background: rgba(11, 18, 29, 0.82);
-  border: 1px solid rgba(80, 100, 140, 0.18);
+  background: var(--inset-bg);
+  border: 1px solid var(--border-color);
 }
 
 .section-title,
@@ -750,8 +747,8 @@ onMounted(() => {
 .template-card,
 .mini-card {
   border-radius: 14px;
-  border: 1px solid rgba(80, 100, 140, 0.18);
-  background: rgba(15, 23, 36, 0.9);
+  border: 1px solid var(--border-color);
+  background: var(--inset-bg-strong);
 }
 
 .experience-card,
@@ -806,8 +803,8 @@ onMounted(() => {
 .info-grid > div {
   padding: 14px;
   border-radius: 14px;
-  background: rgba(15, 23, 36, 0.9);
-  border: 1px solid rgba(80, 100, 140, 0.18);
+  background: var(--inset-bg-strong);
+  border: 1px solid var(--border-color);
 }
 
 .config-item span,

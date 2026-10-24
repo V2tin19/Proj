@@ -155,10 +155,10 @@ const skip = () => {
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
+  background: var(--panel-gradient);
   border-radius: 18px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--panel-shadow);
   padding: 28px 24px;
 }
 

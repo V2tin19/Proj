@@ -36,6 +36,19 @@
   --chat-border: rgba(203, 213, 225, 0.8);
   --chat-input-text: var(--text-color);
   --chat-placeholder: #94a3b8;
+
+  /* 页面舞台(预览区/智能体页)整幅背景 */
+  --stage-gradient: radial-gradient(circle at top, rgba(45, 91, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+  /* 玻璃质感面板(卡片/侧栏)渐变与投影 */
+  --panel-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.98));
+  --panel-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+  /* 毛玻璃工具条 */
+  --toolbar-bg: rgba(255, 255, 255, 0.86);
+  --stage-toolbar-bg: rgba(255, 255, 255, 0.75);
+  /* 面板内嵌区块 */
+  --inset-bg: rgba(241, 245, 249, 0.7);
+  --inset-bg-strong: rgba(255, 255, 255, 0.9);
 }
 
 /* 深色模式主题变量 */
@@ -71,6 +84,15 @@ html.dark {
   --chat-border: rgba(133, 152, 182, 0.22);
   --chat-input-text: var(--text-color);
   --chat-placeholder: #6d7c92;
+
+  --stage-gradient: radial-gradient(circle at top, rgba(59, 108, 255, 0.12), transparent 24%),
+    linear-gradient(180deg, #0a111b 0%, #070b12 100%);
+  --panel-gradient: linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
+  --panel-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+  --toolbar-bg: rgba(7, 11, 18, 0.86);
+  --stage-toolbar-bg: rgba(7, 11, 18, 0.72);
+  --inset-bg: rgba(11, 18, 29, 0.82);
+  --inset-bg-strong: rgba(15, 23, 36, 0.9);
 }
 
 *,

@@ -85,10 +85,9 @@ provide("beginTour", beginTour);
 <style scoped>
 .main-box {
   border-radius: 24px;
-  background:
-    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
+  background: var(--panel-gradient);
   margin: 30px auto;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
+  box-shadow: var(--panel-shadow);
   border: 1px solid var(--border-color);
   padding: 5px;
   display: flex;

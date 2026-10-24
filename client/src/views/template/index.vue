@@ -132,10 +132,9 @@ const getTemplateImage = (template: Template): string => {
   border-radius: 18px;
   transition: all 0.3s ease;
   height: 100%;
-  background:
-    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.96));
+  background: var(--panel-gradient);
   border: 1px solid var(--border-color);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--panel-shadow);
 }
 
 .template-card:hover {

@@ -105,8 +105,7 @@ const handleFileUpload = (file: File) => {
 .left {
   width: 38%;
   height: 100%;
-  background:
-    linear-gradient(180deg, rgba(7, 11, 18, 0.98), rgba(10, 17, 27, 0.98));
+  background: var(--panel-gradient);
   border-right: 1px solid var(--border-color);
   transition: all 0.3s;
   min-width: 520px;
@@ -128,7 +127,7 @@ const handleFileUpload = (file: File) => {
   justify-content: center;
   gap: 20px;
   align-items: center;
-  background: rgba(7, 11, 18, 0.86);
+  background: var(--toolbar-bg);
   border-bottom: 1px solid var(--border-color);
   backdrop-filter: blur(16px);
   flex-shrink: 0;
@@ -154,7 +153,7 @@ const handleFileUpload = (file: File) => {
     top: 0;
     z-index: 20;
     padding-bottom: 10px;
-    background: linear-gradient(180deg, rgba(7, 11, 18, 0.98), rgba(7, 11, 18, 0.72));
+    background: var(--toolbar-bg);
     backdrop-filter: blur(12px);
   }
 

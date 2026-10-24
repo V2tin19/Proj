@@ -237,8 +237,8 @@ defineExpose({ refresh: loadResources });
   margin-bottom: 20px;
   padding: 18px;
   border-radius: 16px;
-  background: rgba(11, 18, 29, 0.82);
-  border: 1px solid rgba(80, 100, 140, 0.18);
+  background: var(--inset-bg);
+  border: 1px solid var(--border-color);
 }
 
 .section-title {
@@ -274,8 +274,8 @@ defineExpose({ refresh: loadResources });
 .config-item {
   padding: 14px;
   border-radius: 14px;
-  background: rgba(15, 23, 36, 0.9);
-  border: 1px solid rgba(80, 100, 140, 0.18);
+  background: var(--inset-bg-strong);
+  border: 1px solid var(--border-color);
 }
 
 .config-item span {
@@ -288,8 +288,8 @@ defineExpose({ refresh: loadResources });
 .knowledge-card {
   padding: 16px;
   border-radius: 14px;
-  border: 1px solid rgba(80, 100, 140, 0.18);
-  background: rgba(15, 23, 36, 0.9);
+  border: 1px solid var(--border-color);
+  background: var(--inset-bg-strong);
 }
 
 .knowledge-card + .knowledge-card {

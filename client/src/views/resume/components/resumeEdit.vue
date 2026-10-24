@@ -168,7 +168,7 @@ const onDropToEnd = (event: DragEvent) => {
   margin-bottom: 16px;
   border-radius: 10px;
   background: var(--panel-surface);
-  border: 1px solid rgba(80, 100, 140, 0.18);
+  border: 1px solid var(--border-color);
   box-shadow: none;
 }
 
@@ -200,7 +200,7 @@ const onDropToEnd = (event: DragEvent) => {
 .module-drop-zone {
   margin-top: 12px;
   padding: 12px;
-  border: 1px dashed rgba(80, 100, 140, 0.2);
+  border: 1px dashed var(--border-color);
   border-radius: 8px;
   display: flex;
   align-items: center;
