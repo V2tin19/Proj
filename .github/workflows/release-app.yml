@@ -40,6 +40,8 @@ jobs:
 
       - name: Prepare Backend Runtime (venv for staging)
         shell: pwsh
+        env:
+          PYTHONUTF8: '1'   # runner 默认 cp1252,pip 读含中文注释的 requirements.txt 会解码失败
         run: |
           python -m venv backend/.venv
           backend/.venv/Scripts/python.exe -m pip install --disable-pip-version-check -r backend/requirements.txt
