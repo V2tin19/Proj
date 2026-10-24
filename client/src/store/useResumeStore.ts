@@ -9,6 +9,7 @@ import type {
   Project, ResumeState, Skill,
   WorkExperience, ResumeSetting, SectionKey
 } from '../types/resume';
+import type { ProfileSnapshot } from '../types/profile';
 import type { GeneratedResumeData } from '../types/agent';
 
 function nextIdFromGeneratedResume(resumeData: GeneratedResumeData) {
@@ -211,6 +212,31 @@ export const useResumeStore = defineStore('resume', {
       this.sectionOrder = normalizeSectionOrder(this.sectionOrder);
       this.saveToLocalStorage();
       message.success('已将智能生成结果应用到当前简历');
+    },
+
+    // 载入一份简历档案快照:整档替换内容与设置,缺省字段回退模板默认值
+    applyProfile(data: Partial<ProfileSnapshot>) {
+      const defaults = JSON.parse(JSON.stringify(resumeTemplate));
+      this.personalInfo = { ...defaults.personalInfo, ...(data.personalInfo || {}) };
+      this.education = data.education ?? defaults.education;
+      this.workExperience = data.workExperience ?? defaults.workExperience;
+      this.skills = data.skills ?? defaults.skills;
+      this.projects = data.projects ?? defaults.projects;
+      this.honors = data.honors ?? defaults.honors;
+      this.summary = data.summary ?? '';
+      this.sectionOrder = normalizeSectionOrder(data.sectionOrder ?? defaults.sectionOrder);
+      this.resumeSetting = { ...defaults.resumeSetting, ...(data.resumeSetting || {}) };
+      this.agentConfig = { ...defaults.agentConfig, ...(data.agentConfig || {}) };
+      this.currentId = nextIdFromGeneratedResume({
+        personalInfo: this.personalInfo,
+        education: this.education,
+        workExperience: this.workExperience,
+        skills: this.skills,
+        projects: this.projects,
+        honors: this.honors,
+        summary: this.summary
+      });
+      this.saveToLocalStorage();
     },
 
     // 新增教育经历

@@ -9,6 +9,7 @@ import type {
   PromptTemplate,
   ResumeGenerateRequest
 } from "../types/agent";
+import type { ProfileDetail, ProfileMeta, ProfileSnapshot } from "../types/profile";
 import { clearSession, getServerBase, getToken, getSessionUser } from "../utils/auth";
 
 /** 规范化的 API 错误:调用方只需读 code/message */
@@ -109,6 +110,36 @@ export async function logoutAccount() {
 export async function fetchMe() {
   const response = await apiClient.get("/auth/me");
   return response.data as { username: string; role: "user" | "admin"; email: string };
+}
+
+// ------------------------------------------------------------------ 简历档案
+
+export async function listProfiles() {
+  const response = await apiClient.get("/profiles");
+  return response.data as ProfileMeta[];
+}
+
+export async function createProfile(payload: { name: string; remark?: string; data: ProfileSnapshot }) {
+  const response = await apiClient.post("/profiles", payload);
+  return response.data as ProfileDetail;
+}
+
+export async function fetchProfile(id: string) {
+  const response = await apiClient.get(`/profiles/${id}`);
+  return response.data as ProfileDetail;
+}
+
+export async function updateProfile(
+  id: string,
+  payload: { name?: string; remark?: string; data?: ProfileSnapshot }
+) {
+  const response = await apiClient.put(`/profiles/${id}`, payload);
+  return response.data as ProfileDetail;
+}
+
+export async function removeProfile(id: string) {
+  const response = await apiClient.delete(`/profiles/${id}`);
+  return response.data as { removed: boolean };
 }
 
 // ------------------------------------------------------------------ 业务

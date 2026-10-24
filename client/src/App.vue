@@ -3,10 +3,12 @@ import { computed, onMounted } from 'vue';
 import { theme } from 'ant-design-vue';
 import Header from "./components/Header/index.vue";
 import { useResumeStore } from './store/useResumeStore';
+import { useProfileStore } from './store/useProfileStore';
 import { useSettingsStore } from './store/useSettingsStore';
 import { useBackendHealth } from './composables/useBackendHealth';
 
 const settingsStore = useSettingsStore();
+const profileStore = useProfileStore();
 const { start: startHealthPolling } = useBackendHealth();
 
 // 页面加载时初始化
@@ -15,6 +17,7 @@ onMounted(async () => {
   await resumeStore.initCheck();
   settingsStore.initTheme();
   startHealthPolling();
+  await profileStore.ensureReady();
 });
 
 const antdThemeConfig = computed(() => ({

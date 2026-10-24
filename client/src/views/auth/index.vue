@@ -63,6 +63,7 @@ import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import { loginAccount, registerAccount, type SessionPayload } from "../../api/agentAPI";
 import { getServerBase, markAuthSkipped, saveSession, setServerBase } from "../../utils/auth";
+import { useProfileStore } from "../../store/useProfileStore";
 
 const route = useRoute();
 const router = useRouter();
@@ -80,6 +81,8 @@ const applySession = (payload: SessionPayload) => {
     setServerBase(serverUrl.value);
   }
   saveSession(payload.token, { username: payload.username, role: payload.role });
+  // 本机简历档案一次性上传合并到云端,不阻塞跳转
+  void useProfileStore().onLoginSuccess(payload.username).catch((e) => console.error(e));
   const redirect = (route.query.redirect as string) || "/";
   router.push(redirect);
 };

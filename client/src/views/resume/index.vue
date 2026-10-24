@@ -13,48 +13,51 @@
 
     <div class="left" :class="{ 'is-mobile-hidden': mobilePane !== 'edit' }">
       <div class="btn-group">
-        <a-popconfirm
-          title="将载入示例数据，会覆盖当前内容，确定吗？"
-          ok-text="确定"
-          cancel-text="取消"
-          @confirm="resumeStore.autoFillData"
-        >
-          <template #icon><question-circle-outlined style="color: red" /></template>
-          <a-button type="primary" ghost>
-            <eye-outlined />
-            载入示例
-          </a-button>
-        </a-popconfirm>
+        <ProfileSwitcher />
+        <div class="btn-group-actions">
+          <a-popconfirm
+            title="将载入示例数据，会覆盖当前内容，确定吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            @confirm="resumeStore.autoFillData"
+          >
+            <template #icon><question-circle-outlined style="color: red" /></template>
+            <a-button type="primary" ghost>
+              <eye-outlined />
+              载入示例
+            </a-button>
+          </a-popconfirm>
 
-        <a-popconfirm
-          title="确定要清空当前简历数据吗？"
-          ok-text="清空"
-          cancel-text="取消"
-          @confirm="resumeStore.clearData"
-        >
-          <template #icon><warning-outlined style="color: red" /></template>
-          <a-button danger>
-            <delete-outlined />
-            清空数据
-          </a-button>
-        </a-popconfirm>
+          <a-popconfirm
+            title="确定要清空当前简历数据吗？"
+            ok-text="清空"
+            cancel-text="取消"
+            @confirm="resumeStore.clearData"
+          >
+            <template #icon><warning-outlined style="color: red" /></template>
+            <a-button danger>
+              <delete-outlined />
+              清空数据
+            </a-button>
+          </a-popconfirm>
 
-        <a-button type="default" @click="resumeStore.exportData">
-          <download-outlined />
-          导出数据
-        </a-button>
-
-        <a-upload
-          v-model:fileList="fileList"
-          :beforeUpload="handleFileUpload"
-          :showUploadList="false"
-          accept="application/json"
-        >
-          <a-button type="dashed">
-            <upload-outlined />
-            导入数据
+          <a-button type="default" @click="resumeStore.exportData">
+            <download-outlined />
+            导出数据
           </a-button>
-        </a-upload>
+
+          <a-upload
+            v-model:fileList="fileList"
+            :beforeUpload="handleFileUpload"
+            :showUploadList="false"
+            accept="application/json"
+          >
+            <a-button type="dashed">
+              <upload-outlined />
+              导入数据
+            </a-button>
+          </a-upload>
+        </div>
       </div>
 
       <resumeEdit />
@@ -72,6 +75,7 @@ import { message } from "ant-design-vue";
 import type { UploadProps } from "ant-design-vue";
 import resumeEdit from './components/resumeEdit.vue';
 import resumePreview from './components/resumePreview.vue';
+import ProfileSwitcher from './components/ProfileSwitcher.vue';
 import { useResumeStore } from "../../store/useResumeStore";
 
 const resumeStore = useResumeStore();
@@ -124,12 +128,21 @@ const handleFileUpload = (file: File) => {
 .btn-group {
   height: 50px;
   display: flex;
-  justify-content: center;
-  gap: 20px;
+  justify-content: space-between;
   align-items: center;
+  gap: 16px;
+  padding: 0 12px;
   background: var(--toolbar-bg);
   border-bottom: 1px solid var(--border-color);
   backdrop-filter: blur(16px);
+  flex-shrink: 0;
+}
+
+.btn-group-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  align-items: center;
   flex-shrink: 0;
 }
 
@@ -188,6 +201,10 @@ const handleFileUpload = (file: File) => {
     gap: 8px;
     padding: 9px;
     overflow-x: auto;
+  }
+
+  .btn-group-actions {
+    gap: 8px;
   }
 
   .btn-group :deep(.ant-btn) {
