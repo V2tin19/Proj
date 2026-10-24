@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5173",
-    "beforeBuildCommand": "npm run build && powershell -ExecutionPolicy Bypass -File scripts/prepare-backend.ps1",
+    "beforeBuildCommand": "npm run build && powershell -ExecutionPolicy Bypass -File src-tauri/scripts/prepare-backend.ps1",
     "frontendDist": "../dist"
   },
   "app": {
