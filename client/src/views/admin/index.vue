@@ -162,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import {
   changeMyPassword,
@@ -312,6 +312,16 @@ const eventColor = (type: string) => {
 };
 
 const formatTime = (iso: string) => (iso ? iso.slice(0, 19).replace('T', ' ') : '');
+
+// 切换标签时重新拉取,避免显示页面加载时的旧快照(操作后立即回看)
+watch(activeTab, (tab) => {
+  if (tab === 'overview') loadStats();
+  else if (tab === 'users') loadUsers();
+  else if (tab === 'audit') {
+    eventOffset.value = 0;
+    loadEvents();
+  }
+});
 
 onMounted(() => {
   loadStats();
