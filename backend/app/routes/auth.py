@@ -4,14 +4,18 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 from starlette.status import (
+    HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
     HTTP_409_CONFLICT,
     HTTP_429_TOO_MANY_REQUESTS,
 )
 
-from app.models.schemas import AuthMeResponse, AuthResponse, LoginRequest, RegisterRequest
+from app.models.schemas import (
+    AuthMeResponse, AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest
+)
 from app.services import auth as auth_service
+from app.services import auth_store, usage_store
 
 router = APIRouter()
 
@@ -27,6 +31,7 @@ async def register(payload: RegisterRequest):
     except ValueError as exc:
         raise HTTPException(status_code=HTTP_409_CONFLICT if "已被注册" in str(exc) else 422, detail=str(exc)) from exc
 
+    usage_store.record_event(result["user"], "register")
     return AuthResponse(
         token=result["token"],
         expiresAt=result["expiresAt"],
@@ -45,6 +50,7 @@ async def login(payload: LoginRequest, request: Request):
     except PermissionError as exc:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
+    usage_store.record_event(result["user"], "login")
     return AuthResponse(
         token=result["token"],
         expiresAt=result["expiresAt"],
@@ -68,3 +74,19 @@ async def me(request: Request):
     if user is None:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="未登录")
     return AuthMeResponse(username=user["username"], role=user["role"], email=user.get("email", ""))
+
+
+@router.post("/auth/change-password")
+async def change_password(payload: ChangePasswordRequest, request: Request):
+    """登录用户修改自己的密码(需验旧密码)。"""
+    user = getattr(request.state, "user", None)
+    if user is None:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="未登录")
+
+    stored = auth_store.get_user_by_username(user["username"])
+    if stored is None or not auth_service.verify_password(payload.oldPassword, stored["passwordHash"]):
+        raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="原密码不正确")
+
+    auth_store.update_user_password(user["id"], auth_service.hash_password(payload.newPassword))
+    usage_store.record_event(user, "password_change", "self")
+    return {"ok": True}

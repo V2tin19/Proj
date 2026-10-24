@@ -20,7 +20,7 @@ from app.models.schemas import (
     LlmTestRequest,
     LlmTestResult,
 )
-from app.services import runtime_config_store
+from app.services import runtime_config_store, usage_store
 
 router = APIRouter()
 
@@ -68,13 +68,15 @@ async def update_llm_config(payload: LlmConfigUpdate, request: Request):
         raise HTTPException(status_code=400, detail="请填写模型名称")
 
     runtime_config_store.save_llm_config(api_url, payload.apiKey.strip(), model)
+    usage_store.record_event(_require_admin(request), "llm_config_update", model)
     return await get_llm_config(request)
 
 
 @router.delete("/llm-config", response_model=LlmConfigResponse)
 async def reset_llm_config(request: Request):
-    _require_admin(request)
+    admin = _require_admin(request)
     runtime_config_store.clear_llm_config()
+    usage_store.record_event(admin, "llm_config_reset")
     return await get_llm_config(request)
 
 

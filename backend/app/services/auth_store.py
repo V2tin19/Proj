@@ -190,3 +190,46 @@ def purge_expired_tokens() -> int:
     if cur.rowcount:
         logger.info("Purged %d expired auth tokens", cur.rowcount)
     return cur.rowcount
+
+
+# ---------------------------------------------------------------------------
+# 用户管理(运营后台)
+# ---------------------------------------------------------------------------
+
+def list_users() -> list[dict]:
+    """All users with active-session counts, oldest first."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT u.id, u.username, u.email, u.role, u.disabled, u.created_at,"
+            " (SELECT COUNT(*) FROM tokens t WHERE t.user_id = u.id"
+            "   AND t.expires_at > ?) AS active_tokens"
+            " FROM users u ORDER BY u.id",
+            (_now(),),
+        ).fetchall()
+    return [
+        {
+            "id": row[0], "username": row[1], "email": row[2], "role": row[3],
+            "disabled": bool(row[4]), "createdAt": row[5], "activeTokens": row[6],
+        }
+        for row in rows
+    ]
+
+
+def set_user_disabled(user_id: int, disabled: bool) -> bool:
+    """Disable/enable an account. Takes effect on the next request
+    (resolve_token rejects disabled users)."""
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE users SET disabled = ? WHERE id = ?",
+            (1 if disabled else 0, user_id),
+        )
+    return cur.rowcount > 0
+
+
+def update_user_password(user_id: int, password_hash: str) -> bool:
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (password_hash, user_id),
+        )
+    return cur.rowcount > 0

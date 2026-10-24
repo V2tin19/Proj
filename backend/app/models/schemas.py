@@ -305,3 +305,56 @@ class LlmTestResult(BaseModel):
     ok: bool
     message: str
     latencyMs: int
+
+
+class ChangePasswordRequest(BaseModel):
+    oldPassword: str = Field(..., min_length=1, max_length=128)
+    newPassword: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("newPassword")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"[0-9]", v):
+            raise ValueError("密码须同时包含字母和数字")
+        return v
+
+
+class AdminUser(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: Literal["user", "admin"]
+    disabled: bool
+    createdAt: str
+    activeTokens: int
+
+
+class UserStatusUpdate(BaseModel):
+    disabled: bool
+
+
+class ResetPasswordRequest(BaseModel):
+    newPassword: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("newPassword")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Za-z]", v) or not re.search(r"[0-9]", v):
+            raise ValueError("密码须同时包含字母和数字")
+        return v
+
+
+class AdminEvent(BaseModel):
+    id: int
+    at: str
+    userId: Optional[int]
+    username: str
+    type: str
+    detail: str
+
+
+class AdminStats(BaseModel):
+    last30Days: dict[str, int]
+    generateProviders: dict[str, int]
+    generateDaily14d: list[dict]
+    topUsers: list[dict]

@@ -2,10 +2,11 @@
 
 import asyncio
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
 from app.models.schemas import GeneratedResumeResponse, ResumeGenerateRequest
 from app.services import knowledge_base as kb_service
+from app.services import usage_store
 from app.services.template_service import load_templates
 from app.services.resume_generator import generate_resume
 
@@ -25,18 +26,18 @@ def _build_search_query(input_data: ResumeGenerateRequest) -> str:
 
 
 @router.post("/generate-resume", response_model=GeneratedResumeResponse)
-async def generate_resume_endpoint(request: ResumeGenerateRequest):
+async def generate_resume_endpoint(payload: ResumeGenerateRequest, request: Request):
     templates = await load_templates()
     if not templates:
         raise HTTPException(status_code=400, detail="No prompt templates available")
 
     template = next(
-        (t for t in templates if t.id == request.templateId),
+        (t for t in templates if t.id == payload.templateId),
         templates[0],
     )
 
-    search_query = _build_search_query(request)
-    if request.enableRag is False or not search_query:
+    search_query = _build_search_query(payload)
+    if payload.enableRag is False or not search_query:
         knowledge_hits = []
     else:
         loop = asyncio.get_running_loop()
@@ -44,7 +45,10 @@ async def generate_resume_endpoint(request: ResumeGenerateRequest):
             None,
             kb_service.retrieve_context,
             search_query,
-            request.retrievalTopK,
+            payload.retrievalTopK,
         )
 
-    return await generate_resume(request, template, knowledge_hits)
+    result = await generate_resume(payload, template, knowledge_hits)
+    actor = getattr(request.state, "user", None)
+    usage_store.record_event(actor, "generate", result.meta.provider)
+    return result

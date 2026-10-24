@@ -19,7 +19,7 @@ import logging
 from typing import AsyncIterator, List
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from starlette.status import (
     HTTP_400_BAD_REQUEST,
@@ -177,7 +177,7 @@ class _UpstreamChat:
 
 
 @router.post("/chat")
-async def chat_endpoint(request: ChatRequest):
+async def chat_endpoint(request: ChatRequest, raw: Request):
     """Chat with the backend-managed LLM and receive a simplified SSE stream."""
     if not settings.llm_api_url or not settings.llm_api_key:
         raise HTTPException(
@@ -186,6 +186,8 @@ async def chat_endpoint(request: ChatRequest):
         )
 
     messages = [{"role": m.role, "content": m.content} for m in request.messages]
+    from app.services import usage_store
+    usage_store.record_event(getattr(raw.state, "user", None), "chat")
     upstream = _UpstreamChat(messages, request.stream)
     # Validate the upstream connection first: failures surface as real HTTP
     # errors instead of a 200 + broken stream.
