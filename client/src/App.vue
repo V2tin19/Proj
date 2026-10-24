@@ -4,14 +4,17 @@ import { theme } from 'ant-design-vue';
 import Header from "./components/Header/index.vue";
 import { useResumeStore } from './store/useResumeStore';
 import { useSettingsStore } from './store/useSettingsStore';
+import { useBackendHealth } from './composables/useBackendHealth';
 
 const settingsStore = useSettingsStore();
+const { start: startHealthPolling } = useBackendHealth();
 
 // 页面加载时初始化
 onMounted(async () => {
   const resumeStore = useResumeStore();
   await resumeStore.initCheck();
   settingsStore.initTheme();
+  startHealthPolling();
 });
 
 const antdThemeConfig = computed(() => ({

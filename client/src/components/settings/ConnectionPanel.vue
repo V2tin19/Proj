@@ -17,12 +17,16 @@
 import { ref } from 'vue';
 import { message } from 'ant-design-vue';
 import { getServerBase, setServerBase } from '../../utils/auth';
+import { useBackendHealth } from '../../composables/useBackendHealth';
 
 const serverUrlDraft = ref<string>(getServerBase());
+const { refresh: refreshHealth } = useBackendHealth();
 
 const saveServerUrl = () => {
   setServerBase(serverUrlDraft.value);
   message.success('服务端地址已保存');
+  // 换服务端后立刻重新探测连接状态
+  refreshHealth();
 };
 </script>
 

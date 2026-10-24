@@ -40,7 +40,14 @@
     <div class="user-area">
       <a-dropdown :trigger="['click']">
         <button ref="userMenuRef" class="user-chip" type="button">
-          <span class="user-avatar">{{ session ? session.username.slice(0, 1).toUpperCase() : '?' }}</span>
+          <span class="user-avatar">
+            {{ session ? session.username.slice(0, 1).toUpperCase() : '?' }}
+            <span
+              class="status-dot"
+              :class="health.status.value"
+              :title="health.status.value === 'ok' ? '服务端已连接' : health.status.value === 'down' ? '服务端离线,AI 功能暂不可用' : '正在检测服务端'"
+            />
+          </span>
           <span class="user-name">{{ session ? session.username : '未登录' }}</span>
         </button>
         <template #overlay>
@@ -85,11 +92,13 @@ import { SettingOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons
 import SvgIcon from "../SvgIcon.vue";
 import UserSettingsDrawer from "../UserSettingsDrawer.vue";
 import { useResumeStore } from "../../store/useResumeStore";
+import { useBackendHealth } from "../../composables/useBackendHealth";
 import { getSessionUser, clearSession, type SessionUser } from "../../utils/auth";
 
 const store = useResumeStore();
 const route = useRoute();
 const router = useRouter();
+const health = useBackendHealth();
 const templateStore = ref(null);
 const userMenuRef = ref(null);
 const tourOpen = ref(false);
@@ -244,6 +253,7 @@ onMounted(() => {
 }
 
 .user-avatar {
+  position: relative;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -254,6 +264,25 @@ onMounted(() => {
   color: #ffffff;
   font-weight: 600;
   font-size: 14px;
+}
+
+.status-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card-color);
+  background: var(--text-muted);
+}
+
+.status-dot.ok {
+  background: #52c41a;
+}
+
+.status-dot.down {
+  background: #ff4d4f;
 }
 
 .user-name {
