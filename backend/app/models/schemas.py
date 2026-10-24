@@ -279,3 +279,29 @@ class ProfileMeta(BaseModel):
 
 class ProfileDetail(ProfileMeta):
     data: dict[str, Any]
+
+
+class LlmConfigResponse(BaseModel):
+    apiUrl: str
+    model: str
+    hasKey: bool
+    keyMasked: str
+    source: Literal["env", "runtime"]
+
+
+class LlmConfigUpdate(BaseModel):
+    apiUrl: str = Field(..., max_length=512)
+    apiKey: str = Field(default="", max_length=512)
+    model: str = Field(..., max_length=128)
+
+
+class LlmTestRequest(BaseModel):
+    apiUrl: str = Field(default="", max_length=512)
+    apiKey: str = Field(default="", max_length=512)
+    model: str = Field(default="", max_length=128)
+
+
+class LlmTestResult(BaseModel):
+    ok: bool
+    message: str
+    latencyMs: int

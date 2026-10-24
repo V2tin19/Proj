@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 
 from app.config import settings
 from app.middleware import AuthMiddleware, RateLimitMiddleware
-from app.routes import auth, chat, export, health, knowledge_base, profiles, resume, templates
+from app.routes import auth, chat, export, health, knowledge_base, llm_config, profiles, resume, templates
 
 
 @asynccontextmanager
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     from app.services import embedding_service, kb_store
     from app.services import auth as auth_service
     from app.services import auth_store
-    from app.services import profile_store
+    from app.services import profile_store, runtime_config_store
     from app.services.kb_store import init_db, migrate_from_json
 
     loop = asyncio.get_running_loop()
@@ -38,6 +38,8 @@ async def lifespan(app: FastAPI):
     await loop.run_in_executor(None, auth_service.bootstrap_admin)
     await loop.run_in_executor(None, auth_store.purge_expired_tokens)
     await loop.run_in_executor(None, profile_store.init_db)
+    await loop.run_in_executor(None, runtime_config_store.init_db)
+    await loop.run_in_executor(None, runtime_config_store.load_and_apply)
     embedding_service.warmup_async()
 
     yield
@@ -74,6 +76,7 @@ app.include_router(resume.router, prefix="/api", tags=["Resume Generation"])
 app.include_router(export.router, prefix="/api", tags=["Export"])
 app.include_router(chat.router, prefix="/api", tags=["Chat Proxy"])
 app.include_router(profiles.router, prefix="/api", tags=["Resume Profiles"])
+app.include_router(llm_config.router, prefix="/api", tags=["LLM Config"])
 
 
 @app.get("/", include_in_schema=False)
