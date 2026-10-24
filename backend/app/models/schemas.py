@@ -255,3 +255,27 @@ class AuthMeResponse(BaseModel):
     username: str
     role: Literal["user", "admin"]
     email: str = ""
+
+
+class ProfileCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    remark: str = Field(default="", max_length=200)
+    data: dict[str, Any]
+
+
+class ProfileUpdateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=50)
+    remark: Optional[str] = Field(default=None, max_length=200)
+    data: Optional[dict[str, Any]] = None
+
+
+class ProfileMeta(BaseModel):
+    id: str
+    name: str
+    remark: str
+    createdAt: str
+    updatedAt: str
+
+
+class ProfileDetail(ProfileMeta):
+    data: dict[str, Any]

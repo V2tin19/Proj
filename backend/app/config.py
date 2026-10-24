@@ -105,6 +105,10 @@ class Settings(BaseSettings):
         return self.data_dir / "kb.sqlite3"
 
     @property
+    def profiles_db_path(self) -> Path:
+        return self.data_dir / "profiles.sqlite3"
+
+    @property
     def legacy_kb_json_path(self) -> Path:
         return self.data_dir / "knowledge-base.json"
 
