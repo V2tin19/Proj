@@ -56,3 +56,9 @@ data/kb.sqlite3-shm
 data/auth.sqlite3
 data/auth.sqlite3-wal
 data/auth.sqlite3-shm
+data/profiles.sqlite3
+data/profiles.sqlite3-wal
+data/profiles.sqlite3-shm
+data/runtime.sqlite3
+data/runtime.sqlite3-wal
+data/runtime.sqlite3-shm
