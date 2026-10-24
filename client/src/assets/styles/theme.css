@@ -3,7 +3,43 @@
   src: url('@/assets/fonts/zql.woff2') format('woff2');
 }
 
+/* 默认浅色主题变量 */
 :root {
+  color-scheme: light;
+  --bg-color: #f8fafc;
+  --bg-card-color: #ffffff;
+  --bg-elevated: #ffffff;
+  --text-color: #0f172a;
+  --text-color2: #334155;
+  --text-muted: #64748b;
+  --primary-color: #2d5bff;
+  --primary-color-hover: #4a72ff;
+  --primary-color-active: #1d46d6;
+  --card-color: rgba(255, 255, 255, 0.95);
+  --panel-surface: rgba(248, 250, 252, 0.95);
+  --border-color: rgba(203, 213, 225, 0.75);
+  --shadow-color: rgba(15, 23, 42, 0.08);
+
+  --color-1: #ffffff;
+  --color-2: #f8fafc;
+  --color-3: #f1f5f9;
+  --color-4: #e2e8f0;
+  --color-5: #cbd5e1;
+  --color-6: #94a3b8;
+  --color-7: #334155;
+
+  --chat-bg: #f8fafc;
+  --chat-user-bubble: #2d5bff;
+  --chat-ai-bubble: #ffffff;
+  --chat-bubble-shadow: rgba(0, 0, 0, 0.06);
+  --chat-input-bg: #ffffff;
+  --chat-border: rgba(203, 213, 225, 0.8);
+  --chat-input-text: var(--text-color);
+  --chat-placeholder: #94a3b8;
+}
+
+/* 深色模式主题变量 */
+html.dark {
   color-scheme: dark;
   --bg-color: #070b12;
   --bg-card-color: #101722;
@@ -11,8 +47,8 @@
   --text-color: #f3f5f8;
   --text-color2: #070b12;
   --text-muted: #9aa7bd;
-  --primary-color: #2d5bff;
-  --primary-color-hover: #4a72ff;
+  --primary-color: #3b6cff;
+  --primary-color-hover: #5884ff;
   --primary-color-active: #1d46d6;
   --card-color: rgba(16, 23, 34, 0.92);
   --panel-surface: rgba(11, 18, 29, 0.9);
@@ -54,16 +90,23 @@ body {
   margin: 0;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top, rgba(45, 91, 255, 0.16), transparent 30%),
-    linear-gradient(180deg, #0b1220 0%, #070b12 58%, #05080e 100%);
+    radial-gradient(circle at top, rgba(45, 91, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 60%, #e2e8f0 100%);
   color: var(--text-color);
-  font-family: 'zql';
-  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  font-family: 'zql', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
   text-wrap: pretty;
 }
 
+html.dark body {
+  background:
+    radial-gradient(circle at top, rgba(45, 91, 255, 0.16), transparent 30%),
+    linear-gradient(180deg, #0b1220 0%, #070b12 58%, #05080e 100%);
+}
+
 a {
-  color: #86a7ff;
+  color: var(--primary-color);
+  transition: color 0.2s ease;
 }
 
 ::selection {
@@ -93,6 +136,7 @@ a {
 .ant-dropdown-menu {
   background: var(--bg-card-color) !important;
   border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
 }
 
 .ant-input,
@@ -136,12 +180,12 @@ a {
 }
 
 .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
-  background: rgba(60, 80, 120, 0.1) !important;
+  background: rgba(45, 91, 255, 0.08) !important;
 }
 
 .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
-  background: rgba(60, 80, 120, 0.18) !important;
-  color: var(--text-color) !important;
+  background: rgba(45, 91, 255, 0.15) !important;
+  color: var(--primary-color) !important;
 }
 
 .ant-select-item-empty,
@@ -150,7 +194,7 @@ a {
 }
 
 .ant-modal-content {
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45) !important;
+  box-shadow: 0 20px 48px var(--shadow-color) !important;
 }
 
 .ant-modal-close {
@@ -159,11 +203,11 @@ a {
 
 .ant-modal-close:hover {
   color: var(--text-color) !important;
-  background: rgba(60, 80, 120, 0.12) !important;
+  background: rgba(45, 91, 255, 0.08) !important;
 }
 
 .ant-slider-rail {
-  background: rgba(80, 100, 140, 0.2) !important;
+  background: rgba(120, 140, 180, 0.2) !important;
 }
 
 .ant-slider-track {
@@ -191,13 +235,13 @@ a {
 .ant-btn-default:hover,
 .ant-btn-dashed:hover,
 .ant-btn-text:hover {
-  color: var(--text-color);
-  border-color: rgba(74, 114, 255, 0.5);
-  background: #172235;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: rgba(45, 91, 255, 0.08);
 }
 
 .ant-alert {
-  background: rgba(24, 35, 54, 0.92);
+  background: var(--bg-card-color);
   border: 1px solid var(--border-color);
 }
 

@@ -37,12 +37,34 @@
 
       <!-- 主题切换 -->
       <div class="input-group">
-        <label>主题模式</label>
-        <a-switch
-          v-model:checked="settingsStore.isDark"
-          checked-children="深色"
-          un-checked-children="浅色"
-        />
+        <label>主题外观</label>
+        <div class="theme-row">
+          <a-radio-group
+            :value="settingsStore.themeMode"
+            button-style="solid"
+            size="middle"
+            @change="(e: any) => settingsStore.setThemeMode(e.target.value)"
+          >
+            <a-radio-button value="light">
+              <span>☀️ 浅色</span>
+            </a-radio-button>
+            <a-radio-button value="dark">
+              <span>🌙 深色</span>
+            </a-radio-button>
+            <a-radio-button value="system">
+              <span>💻 跟随系统</span>
+            </a-radio-button>
+          </a-radio-group>
+        </div>
+        <p class="field-tip">
+          {{
+            settingsStore.themeMode === 'system'
+              ? `跟随系统模式（系统当前偏好: ${settingsStore.isDark ? '深色' : '浅色'}）`
+              : settingsStore.themeMode === 'dark'
+              ? '当前已固定为深色模式'
+              : '当前已固定为浅色模式'
+          }}
+        </p>
       </div>
 
       <!-- 说明 -->
@@ -89,34 +111,39 @@ const goAuth = () => {
 .settings-container {
   display: flex;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 32px 16px;
+  min-height: calc(100vh - 72px);
 }
 
 .settings-card {
   width: 100%;
-  max-width: 600px;
-  background:
-    linear-gradient(180deg, rgba(16, 23, 34, 0.96), rgba(10, 17, 27, 0.98));
-  padding: 24px;
-  border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+  max-width: 640px;
+  background: var(--bg-card-color);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px var(--shadow-color);
   border: 1px solid var(--border-color);
-  color: var(--text-color);
+  padding: 24px;
+  height: fit-content;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
   margin-bottom: 24px;
-  text-align: center;
-  color: var(--primary-color);
+  color: var(--text-color);
 }
 
 .input-group {
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 20px;
+}
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
 }
 
 .session-row {
@@ -161,8 +188,8 @@ label {
 
 .tips {
   font-size: 13px;
-  background: rgba(60, 80, 120, 0.1);
-  padding: 10px;
+  background: rgba(60, 80, 120, 0.08);
+  padding: 12px;
   border-radius: 8px;
   color: var(--text-muted);
   line-height: 1.5;

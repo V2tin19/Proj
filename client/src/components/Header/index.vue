@@ -62,7 +62,7 @@ const tourOpen = ref(false);
 const tourSteps: TourProps["steps"] = [
   {
     title: "网站配置",
-    description: "右上角可注册/登录账号;在网站配置中可切换服务端地址与主题。",
+    description: "右上角可注册/登录账号;在网站配置中可切换服务端地址与主题外观（支持跟随系统）。",
     target: () => setting.value,
   },
   {
@@ -85,10 +85,10 @@ onMounted(() => {
 
 <style scoped>
 .navbar {
-  background:
-    linear-gradient(90deg, rgba(4, 7, 13, 0.98), rgba(13, 20, 32, 0.96) 40%, rgba(15, 31, 61, 0.95) 100%);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 16px 40px var(--shadow-color);
+  box-shadow: 0 4px 20px var(--shadow-color);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -97,6 +97,12 @@ onMounted(() => {
   align-items: center;
   min-height: 72px;
   padding: 0 16px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+:global(html.dark) .navbar {
+  background: linear-gradient(90deg, rgba(4, 7, 13, 0.98), rgba(13, 20, 32, 0.96) 40%, rgba(15, 31, 61, 0.95) 100%);
+  box-shadow: 0 16px 40px var(--shadow-color);
 }
 
 .navbar nav {
@@ -119,22 +125,33 @@ onMounted(() => {
   gap: 7px;
   color: var(--text-color);
   text-align: center;
-  font-size: 17px;
-  min-height: 48px;
+  font-size: 16px;
+  min-height: 44px;
   padding: 0 14px;
   text-decoration: none;
   transition: all 0.22s;
-  border-radius: 14px;
+  border-radius: 12px;
   white-space: nowrap;
 }
 
 .navbar nav ul li a:hover {
-  background-color: rgba(59, 108, 255, 0.14);
-  color: #ffffff;
+  background-color: rgba(45, 91, 255, 0.1);
+  color: var(--primary-color);
 }
 
 .navbar nav ul li .router-link-active {
-  background: rgba(59, 108, 255, 0.2);
+  background: rgba(45, 91, 255, 0.16);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+:global(html.dark) .navbar nav ul li a:hover {
+  background-color: rgba(59, 108, 255, 0.18);
+  color: #ffffff;
+}
+
+:global(html.dark) .navbar nav ul li .router-link-active {
+  background: rgba(59, 108, 255, 0.24);
   color: #ffffff;
 }
 

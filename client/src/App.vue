@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue';
+import { theme } from 'ant-design-vue';
 import Header from "./components/Header/index.vue";
 import { useResumeStore } from './store/useResumeStore';
 import { useSettingsStore } from './store/useSettingsStore';
-import { onMounted } from 'vue';
+
 const settingsStore = useSettingsStore();
 
 // 页面加载时初始化
@@ -11,14 +13,18 @@ onMounted(async () => {
   await resumeStore.initCheck();
   settingsStore.initTheme();
 });
+
+const antdThemeConfig = computed(() => ({
+  algorithm: settingsStore.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+  token: {
+    colorPrimary: settingsStore.theme,
+    borderRadius: 8,
+  },
+}));
 </script>
 
 <template>
-  <a-config-provider :theme="{
-    token: {
-      colorPrimary: settingsStore.theme,
-    },
-  }">
+  <a-config-provider :theme="antdThemeConfig">
     <div class="app-shell">
       <Header />
       <main class="app-content">
@@ -31,7 +37,6 @@ onMounted(async () => {
     </div>
   </a-config-provider>
 </template>
-
 
 <style scoped>
 .app-shell {
