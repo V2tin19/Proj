@@ -62,3 +62,6 @@ data/profiles.sqlite3-shm
 data/runtime.sqlite3
 data/runtime.sqlite3-wal
 data/runtime.sqlite3-shm
+data/usage.sqlite3
+data/usage.sqlite3-wal
+data/usage.sqlite3-shm
