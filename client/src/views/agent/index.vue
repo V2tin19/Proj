@@ -106,6 +106,10 @@
           <a-tab-pane key="knowledge" tab="知识库管理">
             <KnowledgeBasePanel />
           </a-tab-pane>
+
+          <a-tab-pane v-if="isAdmin" key="model" tab="模型服务">
+            <ModelConfigPanel />
+          </a-tab-pane>
         </a-tabs>
 
         <div class="action-bar">
@@ -153,6 +157,15 @@
           <a-empty v-if="!generatedResult" description="还没有生成结果，确认档案信息后点击生成" />
 
           <template v-else>
+            <a-alert
+              v-if="generatedResult.meta.fallbackReason"
+              type="warning"
+              show-icon
+              class="fallback-alert"
+              :message="`本次为本地回退生成：${generatedResult.meta.fallbackReason}`"
+              description="在「模型服务」中配置可用的模型接口后即可获得 AI 生成结果。"
+            />
+
             <div class="result-card">
               <div class="card-head">
                 <h3>生成元信息</h3>
@@ -256,12 +269,16 @@ import { generateResume, getPromptTemplates } from "../../api/agentAPI";
 import { useResumeStore } from "../../store";
 import { useBackendHealth } from "../../composables/useBackendHealth";
 import { sectionLabels } from "../../constants/sectionLabels";
+import { getSessionUser } from "../../utils/auth";
 import KnowledgeBasePanel from "./components/KnowledgeBasePanel.vue";
+import ModelConfigPanel from "./components/ModelConfigPanel.vue";
 import type { GeneratedResumeResponse, PromptTemplate, ResumeGenerateRequest } from "../../types/agent";
 
 const router = useRouter();
 const resumeStore = useResumeStore();
 const health = useBackendHealth();
+// 模型服务配置仅运营者可见(后端接口另有 admin 鉴权兜底)
+const isAdmin = getSessionUser()?.role === "admin";
 
 const activeTab = ref("strategy");
 const generating = ref(false);
@@ -696,6 +713,10 @@ onMounted(() => {
 
 .result-header {
   margin-bottom: 18px;
+}
+
+.fallback-alert {
+  margin-bottom: 14px;
 }
 
 .status-cards {

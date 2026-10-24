@@ -103,6 +103,7 @@ export interface GeneratedResumeResponse {
     provider: string;
     templateId: string;
     templateName: string;
+    fallbackReason?: string;
     knowledgeHits: Array<{
       documentId: string;
       documentName: string;

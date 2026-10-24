@@ -142,6 +142,42 @@ export async function removeProfile(id: string) {
   return response.data as { removed: boolean };
 }
 
+// ------------------------------------------------------------------ 模型服务配置(admin)
+
+export interface LlmConfig {
+  apiUrl: string;
+  model: string;
+  hasKey: boolean;
+  keyMasked: string;
+  source: "env" | "runtime";
+}
+
+export interface LlmTestResult {
+  ok: boolean;
+  message: string;
+  latencyMs: number;
+}
+
+export async function getLlmConfig() {
+  const response = await apiClient.get("/llm-config");
+  return response.data as LlmConfig;
+}
+
+export async function saveLlmConfig(payload: { apiUrl: string; apiKey?: string; model: string }) {
+  const response = await apiClient.put("/llm-config", payload);
+  return response.data as LlmConfig;
+}
+
+export async function clearLlmConfig() {
+  const response = await apiClient.delete("/llm-config");
+  return response.data as LlmConfig;
+}
+
+export async function testLlmConfig(payload: { apiUrl?: string; apiKey?: string; model?: string } = {}) {
+  const response = await apiClient.post("/llm-config/test", payload);
+  return response.data as LlmTestResult;
+}
+
 // ------------------------------------------------------------------ 业务
 
 export async function getBackendHealth() {
