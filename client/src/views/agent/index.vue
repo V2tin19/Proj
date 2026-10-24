@@ -4,8 +4,8 @@
       <section class="left-panel">
         <div class="panel-header">
           <div>
-            <h1>简历智能体工作台</h1>
-            <p>先录入学生信息，再调用后端生成结构化简历，并可一键回填到编辑器。</p>
+            <h1>简历智能体</h1>
+            <p>以当前简历档案为数据源，配置生成策略后一键生成结构化简历。</p>
           </div>
           <div class="status-box">
             <span class="status-label">后端状态</span>
@@ -13,35 +13,39 @@
           </div>
         </div>
 
-        <a-alert
-          message="当前阶段说明"
-          description="这一版先实现本地后端、提示词模板、知识库配置、RAG 检索和结构化简历生成闭环。后续可以继续接本地 DeepSeek/Qwen 模型、文件上传解析和 Word 导出。"
-          type="info"
-          show-icon
-          class="intro-alert"
-        />
-
         <a-tabs v-model:activeKey="activeTab" class="editor-tabs">
-          <a-tab-pane key="profile" tab="学生信息">
+          <a-tab-pane key="strategy" tab="生成策略">
             <div class="form-section">
               <div class="section-title">
-                <span>基础信息</span>
-                <a-button size="small" @click="fillFromResumeStore">从当前简历回填</a-button>
+                <span>数据来源 · 当前简历档案</span>
+                <a-button size="small" @click="goToResumeEditor">去编辑简历</a-button>
               </div>
               <div class="grid-two">
-                <a-input v-model:value="form.name" placeholder="姓名" />
-                <a-input v-model:value="form.gender" placeholder="性别" />
-                <a-input v-model:value="form.age" placeholder="年龄" />
-                <a-input v-model:value="form.phone" placeholder="手机号" />
-                <a-input v-model:value="form.email" placeholder="邮箱" />
-                <a-input v-model:value="form.website" placeholder="个人主页 / GitHub" />
-                <a-input v-model:value="form.school" placeholder="学校" />
-                <a-input v-model:value="form.major" placeholder="专业" />
-                <a-input v-model:value="form.degree" placeholder="学历 / 学位" />
-                <a-input v-model:value="form.politicalStatus" placeholder="政治面貌" />
-                <a-input v-model:value="form.applicationPosition" placeholder="应聘岗位" />
-                <a-input v-model:value="form.targetIndustry" placeholder="求职方向 / 行业" />
+                <div class="source-item">
+                  <span>姓名</span>
+                  <strong>{{ resumeSource.name || '未填写' }}</strong>
+                </div>
+                <div class="source-item">
+                  <span>应聘岗位</span>
+                  <strong>{{ resumeSource.applicationPosition || '未填写' }}</strong>
+                </div>
+                <div class="source-item">
+                  <span>学校</span>
+                  <strong>{{ resumeSource.university || '未填写' }}</strong>
+                </div>
+                <div class="source-item">
+                  <span>专业</span>
+                  <strong>{{ resumeSource.major || '未填写' }}</strong>
+                </div>
               </div>
+              <div class="source-counts">
+                <a-tag v-for="item in sectionCounts" :key="item.label" class="count-tag">
+                  {{ item.label }} {{ item.count }}
+                </a-tag>
+              </div>
+              <p class="source-tip">
+                技能、荣誉、自我评价与各段经历直接取自当前简历档案，生成时自动携带，无需重复填写。
+              </p>
             </div>
 
             <div class="form-section">
@@ -50,11 +54,11 @@
               </div>
               <div class="grid-two">
                 <a-select
-                  v-model:value="form.templateId"
+                  v-model:value="agentConfig.templateId"
                   :options="templateOptions"
                   placeholder="选择提示词模板"
                 />
-                <a-input v-model:value="form.targetRole" placeholder="目标岗位关键词，如前端开发 / 产品运营" />
+                <a-input v-model:value="agentConfig.targetRole" placeholder="目标岗位关键词，如前端开发 / 产品运营" />
               </div>
               <div v-if="selectedTemplate" class="template-card">
                 <div class="template-title">
@@ -66,128 +70,36 @@
               </div>
               <div class="inline-switch">
                 <span>启用知识库检索增强（RAG）</span>
-                <a-switch v-model:checked="form.enableRag" />
+                <a-switch v-model:checked="agentConfig.enableRag" />
               </div>
               <div class="inline-switch" style="margin-top: 12px;">
                 <span>简历正文字数控制</span>
-                <a-slider v-model:value="form.wordCount" :min="300" :max="2000" :step="50" style="flex: 1; margin-left: 16px;" />
-                <span style="min-width: 50px; text-align: right;">{{ form.wordCount }} 字</span>
+                <a-slider v-model:value="agentConfig.wordCount" :min="300" :max="2000" :step="50" style="flex: 1; margin-left: 16px;" />
+                <span style="min-width: 50px; text-align: right;">{{ agentConfig.wordCount }} 字</span>
               </div>
             </div>
 
             <div class="form-section">
               <div class="section-title">
-                <span>教育经历</span>
-                <a-button size="small" type="dashed" @click="addEducationRow">新增</a-button>
-              </div>
-              <div
-                v-for="(item, index) in form.educationExperiences"
-                :key="`education-${index}`"
-                class="experience-card"
-              >
-                <div class="card-tools">
-                  <span>教育经历 {{ index + 1 }}</span>
-                  <a-button size="small" danger ghost @click="removeEducationRow(index)">删除</a-button>
-                </div>
-                <div class="grid-two">
-                  <a-input v-model:value="item.school" placeholder="学校" />
-                  <a-input v-model:value="item.degree" placeholder="学历 / 学位" />
-                  <a-input v-model:value="item.major" placeholder="专业" />
-                  <a-input v-model:value="item.startDate" placeholder="开始时间" />
-                  <a-input v-model:value="item.endDate" placeholder="结束时间" />
-                </div>
-              </div>
-            </div>
-
-            <div class="form-section">
-              <div class="section-title">
-                <span>项目经历</span>
-                <a-button size="small" type="dashed" @click="addProjectRow">新增</a-button>
-              </div>
-              <div
-                v-for="(item, index) in form.projectExperiences"
-                :key="`project-${index}`"
-                class="experience-card"
-              >
-                <div class="card-tools">
-                  <span>项目经历 {{ index + 1 }}</span>
-                  <a-button size="small" danger ghost @click="removeProjectRow(index)">删除</a-button>
-                </div>
-                <div class="grid-two">
-                  <a-input v-model:value="item.projectName" placeholder="项目名称" />
-                  <a-input v-model:value="item.role" placeholder="角色" />
-                  <a-input v-model:value="item.startDate" placeholder="开始时间" />
-                  <a-input v-model:value="item.endDate" placeholder="结束时间" />
-                </div>
-                <a-input
-                  v-model:value="item.briefIntroduction"
-                  placeholder="项目一句话简介"
-                  class="block-field"
-                />
-                <a-textarea
-                  v-model:value="item.description"
-                  :auto-size="{ minRows: 3, maxRows: 6 }"
-                  placeholder="按行填写职责、难点、成果，例如：负责页面开发；封装组件；优化首屏性能。"
-                />
-              </div>
-            </div>
-
-            <div class="form-section">
-              <div class="section-title">
-                <span>实践 / 实习经历</span>
-                <a-button size="small" type="dashed" @click="addWorkRow">新增</a-button>
-              </div>
-              <div
-                v-for="(item, index) in form.workExperiences"
-                :key="`work-${index}`"
-                class="experience-card"
-              >
-                <div class="card-tools">
-                  <span>实践经历 {{ index + 1 }}</span>
-                  <a-button size="small" danger ghost @click="removeWorkRow(index)">删除</a-button>
-                </div>
-                <div class="grid-two">
-                  <a-input v-model:value="item.company" placeholder="公司 / 单位 / 组织" />
-                  <a-input v-model:value="item.position" placeholder="岗位 / 身份" />
-                  <a-input v-model:value="item.startDate" placeholder="开始时间" />
-                  <a-input v-model:value="item.endDate" placeholder="结束时间" />
-                </div>
-                <a-textarea
-                  v-model:value="item.description"
-                  :auto-size="{ minRows: 3, maxRows: 6 }"
-                  placeholder="按行填写职责与成果。"
-                />
-              </div>
-            </div>
-
-            <div class="form-section">
-              <div class="section-title">
-                <span>补充信息</span>
+                <span>补充生成信息</span>
               </div>
               <div class="grid-two">
-                <a-input v-model:value="form.ranking" placeholder="成绩 / 排名，如专业前10%" />
-                <a-input v-model:value="form.courses" placeholder="核心课程，使用分号或换行分隔" />
+                <a-input v-model:value="agentConfig.targetIndustry" placeholder="求职方向 / 行业" />
+                <a-input v-model:value="agentConfig.ranking" placeholder="成绩 / 排名，如专业前10%" />
               </div>
               <a-textarea
-                v-model:value="form.skillsText"
-                :auto-size="{ minRows: 3, maxRows: 6 }"
-                placeholder="技能清单，建议一行一项"
+                v-model:value="agentConfig.courses"
+                :auto-size="{ minRows: 2, maxRows: 4 }"
+                placeholder="核心课程，使用分号或换行分隔"
+                style="margin-top: 12px;"
               />
               <a-textarea
-                v-model:value="form.honorsText"
-                :auto-size="{ minRows: 3, maxRows: 6 }"
-                placeholder="荣誉奖项，建议一行一项"
-              />
-              <a-textarea
-                v-model:value="form.interests"
+                v-model:value="agentConfig.interests"
                 :auto-size="{ minRows: 2, maxRows: 4 }"
                 placeholder="兴趣爱好，可选"
+                style="margin-top: 12px;"
               />
-              <a-textarea
-                v-model:value="form.selfIntroduction"
-                :auto-size="{ minRows: 4, maxRows: 8 }"
-                placeholder="个人总结、自我介绍、优势亮点"
-              />
+              <p class="source-tip">补充信息与生成策略会随当前简历档案一起保存，不同岗位档案可各自记忆。</p>
             </div>
           </a-tab-pane>
 
@@ -197,10 +109,18 @@
         </a-tabs>
 
         <div class="action-bar">
-          <a-button @click="fillFromResumeStore">重置为当前简历</a-button>
-          <a-button type="primary" :loading="generating" @click="handleGenerate">
-            生成结构化简历
-          </a-button>
+          <a-tooltip
+            :title="health.status.value === 'down' ? '服务端离线，连接后可用' : '按当前档案数据与生成策略调用智能体'"
+          >
+            <a-button
+              type="primary"
+              :loading="generating"
+              :disabled="health.status.value === 'down'"
+              @click="handleGenerate"
+            >
+              生成结构化简历
+            </a-button>
+          </a-tooltip>
         </div>
       </section>
 
@@ -230,7 +150,7 @@
             </div>
           </div>
 
-          <a-empty v-if="!generatedResult" description="还没有生成结果，左侧填写信息后点击生成" />
+          <a-empty v-if="!generatedResult" description="还没有生成结果，确认档案信息后点击生成" />
 
           <template v-else>
             <div class="result-card">
@@ -296,9 +216,9 @@
 
             <div class="result-card">
               <div class="card-head">
-                <h3>实践经历</h3>
+                <h3>工作经历</h3>
               </div>
-              <a-empty v-if="generatedResult.resumeData.workExperience.length === 0" description="暂无实践经历" />
+              <a-empty v-if="generatedResult.resumeData.workExperience.length === 0" description="暂无工作经历" />
               <div v-for="item in generatedResult.resumeData.workExperience" :key="item.id" class="result-item">
                 <strong>{{ item.company }}</strong>
                 <span>{{ item.position }}</span>
@@ -329,87 +249,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { message } from "ant-design-vue";
 import { useRouter } from "vue-router";
-import {
-  generateResume,
-  getBackendHealth,
-  getPromptTemplates
-} from "../../api/agentAPI";
+import { generateResume, getPromptTemplates } from "../../api/agentAPI";
 import { useResumeStore } from "../../store";
+import { useBackendHealth } from "../../composables/useBackendHealth";
+import { sectionLabels } from "../../constants/sectionLabels";
 import KnowledgeBasePanel from "./components/KnowledgeBasePanel.vue";
-import type {
-  GeneratedResumeResponse,
-  PromptTemplate,
-  ResumeGenerateRequest,
-  StudentEducationInput,
-  StudentProjectInput,
-  StudentWorkInput
-} from "../../types/agent";
+import type { GeneratedResumeResponse, PromptTemplate, ResumeGenerateRequest } from "../../types/agent";
 
 const router = useRouter();
 const resumeStore = useResumeStore();
+const health = useBackendHealth();
 
-const activeTab = ref("profile");
+const activeTab = ref("strategy");
 const generating = ref(false);
 const pageLoading = ref(false);
 const templates = ref<PromptTemplate[]>([]);
 const generatedResult = ref<GeneratedResumeResponse | null>(null);
-const backendHealth = ref<{ ok: boolean; now: string; provider: string } | null>(null);
 
-const createEmptyEducation = (): StudentEducationInput => ({
-  school: "",
-  degree: "",
-  major: "",
-  startDate: "",
-  endDate: ""
-});
-
-const createEmptyProject = (): StudentProjectInput => ({
-  projectName: "",
-  role: "",
-  startDate: "",
-  endDate: "",
-  briefIntroduction: "",
-  description: ""
-});
-
-const createEmptyWork = (): StudentWorkInput => ({
-  company: "",
-  position: "",
-  startDate: "",
-  endDate: "",
-  description: ""
-});
-
-const form = reactive<ResumeGenerateRequest>({
-  name: "",
-  gender: "",
-  age: "",
-  phone: "",
-  email: "",
-  website: "",
-  school: "",
-  major: "",
-  degree: "",
-  politicalStatus: "",
-  applicationPosition: "",
-  targetRole: "",
-  targetIndustry: "",
-  ranking: "",
-  courses: "",
-  skillsText: "",
-  honorsText: "",
-  interests: "",
-  selfIntroduction: "",
-  templateId: "",
-  enableRag: true,
-  wordCount: 800,
-  educationExperiences: [createEmptyEducation()],
-  workExperiences: [createEmptyWork()],
-  projectExperiences: [createEmptyProject()]
-});
+// 生成策略直接落在简历档案上,随档案保存与切换
+const agentConfig = computed(() => resumeStore.agentConfig);
 
 const templateOptions = computed(() =>
   templates.value.map((item) => ({
@@ -419,167 +280,130 @@ const templateOptions = computed(() =>
 );
 
 const selectedTemplate = computed(() =>
-  templates.value.find((item) => item.id === form.templateId) || null
+  templates.value.find((item) => item.id === agentConfig.value.templateId) || null
 );
 
 const backendStatusText = computed(() => {
-  if (!backendHealth.value) return "未连接";
-  return backendHealth.value.provider === "llm-configured" ? "已连接模型接口" : "本地回退模式";
+  if (health.status.value === 'down') return "离线";
+  if (health.status.value === 'unknown') return "检测中";
+  return health.info.value?.provider === "llm-configured" ? "已连接模型接口" : "本地回退模式";
 });
 
 const backendStatusColor = computed(() => {
-  if (!backendHealth.value) return "default";
-  return backendHealth.value.provider === "llm-configured" ? "success" : "gold";
+  if (health.status.value === 'down') return "error";
+  if (health.status.value === 'unknown') return "default";
+  return health.info.value?.provider === "llm-configured" ? "success" : "gold";
 });
 
-function replaceArray<T>(target: T[], nextItems: T[]) {
-  target.splice(0, target.length, ...nextItems);
+// 数据来源摘要:全部来自当前简历档案
+const resumeSource = computed(() => ({
+  name: resumeStore.personalInfo.name,
+  applicationPosition: resumeStore.personalInfo.applicationPosition,
+  university: resumeStore.personalInfo.university,
+  major: resumeStore.personalInfo.major
+}));
+
+const sectionCounts = computed(() => [
+  { label: sectionLabels.education, count: resumeStore.education.length },
+  { label: sectionLabels.projects, count: resumeStore.projects.length },
+  { label: sectionLabels.workExperience, count: resumeStore.workExperience.length },
+  { label: sectionLabels.skills, count: resumeStore.skills.length },
+  { label: sectionLabels.honors, count: resumeStore.honors.length }
+]);
+
+// 从当前简历档案 + 生成策略组装请求,不再维护第二份表单
+function buildGenerateRequest(): ResumeGenerateRequest {
+  const info = resumeStore.personalInfo;
+  return {
+    name: info.name,
+    gender: info.gender,
+    age: info.age,
+    phone: info.phone,
+    email: info.email,
+    website: info.website,
+    school: info.university,
+    major: info.major,
+    degree: resumeStore.education[0]?.degree || "",
+    politicalStatus: info.politicalStatus,
+    applicationPosition: info.applicationPosition,
+    targetRole: agentConfig.value.targetRole || info.applicationPosition,
+    targetIndustry: agentConfig.value.targetIndustry,
+    ranking: agentConfig.value.ranking,
+    courses: agentConfig.value.courses,
+    skillsText: resumeStore.skills.map((item) => item.skillName).filter(Boolean).join("\n"),
+    honorsText: resumeStore.honors.map((item) => item.honorName).filter(Boolean).join("\n"),
+    interests: agentConfig.value.interests,
+    selfIntroduction: resumeStore.summary,
+    templateId: agentConfig.value.templateId,
+    enableRag: agentConfig.value.enableRag,
+    wordCount: agentConfig.value.wordCount,
+    educationExperiences: resumeStore.education.map((item) => ({
+      school: item.school,
+      degree: item.degree,
+      major: item.major,
+      startDate: item.startDate,
+      endDate: item.endDate
+    })),
+    workExperiences: resumeStore.workExperience.map((item) => ({
+      company: item.company,
+      position: item.position,
+      startDate: item.startDate || "",
+      endDate: item.endDate || "",
+      description: item.description
+    })),
+    projectExperiences: resumeStore.projects.map((item) => ({
+      projectName: item.projectName,
+      role: item.role,
+      startDate: item.startDate,
+      endDate: item.endDate,
+      briefIntroduction: item.briefIntroduction,
+      description: item.description
+    }))
+  };
 }
 
-function fillFromResumeStore() {
-  form.name = resumeStore.personalInfo.name;
-  form.gender = resumeStore.personalInfo.gender;
-  form.age = resumeStore.personalInfo.age;
-  form.phone = resumeStore.personalInfo.phone;
-  form.email = resumeStore.personalInfo.email;
-  form.website = resumeStore.personalInfo.website;
-  form.school = resumeStore.personalInfo.university;
-  form.major = resumeStore.personalInfo.major;
-  form.degree = resumeStore.education[0]?.degree || "";
-  form.politicalStatus = resumeStore.personalInfo.politicalStatus;
-  form.applicationPosition = resumeStore.personalInfo.applicationPosition;
-  form.targetRole = resumeStore.personalInfo.applicationPosition;
-  form.skillsText = resumeStore.skills.map((item) => item.skillName).filter(Boolean).join("\n");
-  form.honorsText = resumeStore.honors.map((item) => item.honorName).filter(Boolean).join("\n");
-  form.selfIntroduction = resumeStore.summary;
-
-  replaceArray(
-    form.educationExperiences,
-    resumeStore.education.length
-      ? resumeStore.education.map((item) => ({
-          school: item.school,
-          degree: item.degree,
-          major: item.major,
-          startDate: item.startDate,
-          endDate: item.endDate
-        }))
-      : [createEmptyEducation()]
-  );
-
-  replaceArray(
-    form.projectExperiences,
-    resumeStore.projects.length
-      ? resumeStore.projects.map((item) => ({
-          projectName: item.projectName,
-          role: item.role,
-          startDate: item.startDate,
-          endDate: item.endDate,
-          briefIntroduction: item.briefIntroduction,
-          description: item.description
-        }))
-      : [createEmptyProject()]
-  );
-
-  replaceArray(
-    form.workExperiences,
-    resumeStore.workExperience.length
-      ? resumeStore.workExperience.map((item) => ({
-          company: item.company,
-          position: item.position,
-          startDate: item.startDate || "",
-          endDate: item.endDate || "",
-          description: item.description
-        }))
-      : [createEmptyWork()]
-  );
-}
-
-function addEducationRow() {
-  form.educationExperiences.push(createEmptyEducation());
-}
-
-function removeEducationRow(index: number) {
-  if (form.educationExperiences.length === 1) {
-    replaceArray(form.educationExperiences, [createEmptyEducation()]);
-    return;
-  }
-  form.educationExperiences.splice(index, 1);
-}
-
-function addProjectRow() {
-  form.projectExperiences.push(createEmptyProject());
-}
-
-function removeProjectRow(index: number) {
-  if (form.projectExperiences.length === 1) {
-    replaceArray(form.projectExperiences, [createEmptyProject()]);
-    return;
-  }
-  form.projectExperiences.splice(index, 1);
-}
-
-function addWorkRow() {
-  form.workExperiences.push(createEmptyWork());
-}
-
-function removeWorkRow(index: number) {
-  if (form.workExperiences.length === 1) {
-    replaceArray(form.workExperiences, [createEmptyWork()]);
-    return;
-  }
-  form.workExperiences.splice(index, 1);
-}
-
-async function loadInitialData() {
-  pageLoading.value = true;
-  try {
-    const [health, promptTemplates] = await Promise.all([
-      getBackendHealth(),
-      getPromptTemplates()
-    ]);
-
-    backendHealth.value = health;
-    templates.value = promptTemplates;
-    if (!form.templateId && promptTemplates.length > 0) {
-      form.templateId = promptTemplates[0].id;
-    }
-
-    fillFromResumeStore();
-  } catch (error) {
-    console.error(error);
-    message.error("智能体后端暂时不可用，请先启动本地服务。");
-  } finally {
-    pageLoading.value = false;
-  }
-}
-
-function validateGenerateForm() {
-  if (!form.name.trim()) {
-    message.warning("请至少填写姓名");
+function validateGenerate() {
+  const request = buildGenerateRequest();
+  if (!request.name.trim()) {
+    message.warning("请先在简历档案中填写姓名");
     return false;
   }
-  if (!form.school.trim()) {
-    message.warning("请至少填写学校");
+  if (!request.school.trim()) {
+    message.warning("请先在简历档案中填写学校");
     return false;
   }
-  if (!form.templateId) {
+  if (!request.templateId) {
     message.warning("请选择提示词模板");
     return false;
   }
   return true;
 }
 
+async function loadInitialData() {
+  pageLoading.value = true;
+  try {
+    templates.value = await getPromptTemplates();
+    if (!agentConfig.value.templateId && templates.value.length > 0) {
+      agentConfig.value.templateId = templates.value[0].id;
+    }
+  } catch (error) {
+    console.error(error);
+    message.error("提示词模板加载失败，请检查服务端连接。");
+  } finally {
+    pageLoading.value = false;
+  }
+}
+
 async function handleGenerate() {
-  if (!validateGenerateForm()) return;
+  if (health.status.value === 'down') {
+    message.warning("服务端离线，请先在账号与设置中配置并启动服务端");
+    return;
+  }
+  if (!validateGenerate()) return;
 
   generating.value = true;
   try {
-    generatedResult.value = await generateResume({
-      ...form,
-      educationExperiences: form.educationExperiences.map((item) => ({ ...item })),
-      workExperiences: form.workExperiences.map((item) => ({ ...item })),
-      projectExperiences: form.projectExperiences.map((item) => ({ ...item }))
-    });
+    generatedResult.value = await generateResume(buildGenerateRequest());
     message.success("智能体已生成结构化简历");
   } catch (error) {
     console.error(error);
@@ -649,7 +473,6 @@ onMounted(() => {
 .result-header h2,
 .card-head h3,
 .result-item strong,
-.knowledge-top strong,
 .template-card strong,
 .mini-card strong {
   margin: 0;
@@ -659,44 +482,38 @@ onMounted(() => {
 .panel-header p,
 .result-header p,
 .result-card > p,
-.knowledge-top p {
-  margin: 8px 0 0;
+.template-card p,
+.source-tip {
+  margin: 6px 0 0;
   color: var(--text-muted);
+  font-size: 13px;
   line-height: 1.6;
 }
 
+.panel-header h1 {
+  font-size: 24px;
+}
+
 .status-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--inset-bg);
   min-width: 120px;
-  text-align: right;
 }
 
 .status-label {
-  display: block;
-  margin-bottom: 8px;
   color: var(--text-muted);
   font-size: 12px;
-}
-
-.intro-alert {
-  margin: 18px 0;
-}
-
-.intro-alert :deep(.ant-alert-message) {
-  color: var(--text-color) !important;
-  font-weight: 600;
-}
-
-.intro-alert :deep(.ant-alert-description) {
-  color: var(--text-muted) !important;
-}
-
-.intro-alert :deep(.ant-alert-icon) {
-  color: #7ea2ff !important;
 }
 
 .editor-tabs {
   flex: 1;
   min-height: 0;
+  margin-top: 16px;
 }
 
 .form-section {
@@ -709,7 +526,6 @@ onMounted(() => {
 
 .section-title,
 .card-tools,
-.knowledge-top,
 .card-head,
 .template-title,
 .result-actions,
@@ -732,7 +548,60 @@ onMounted(() => {
   gap: 12px;
 }
 
-.block-field,
+.source-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--inset-bg-strong);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.source-item span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.source-item strong {
+  color: var(--text-color);
+  font-size: 15px;
+}
+
+.source-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.count-tag {
+  background: var(--inset-bg-strong);
+}
+
+.source-tip {
+  margin-top: 12px;
+}
+
+.template-card {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--inset-bg-strong);
+  border: 1px solid var(--border-color);
+}
+
+.template-card p {
+  margin: 8px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.template-card small {
+  color: var(--text-muted);
+}
+
 .form-section :deep(.ant-input),
 .form-section :deep(.ant-select),
 .form-section :deep(.ant-input-affix-wrapper),
@@ -741,8 +610,6 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
-.experience-card,
-.knowledge-card,
 .result-card,
 .template-card,
 .mini-card {
@@ -751,15 +618,10 @@ onMounted(() => {
   background: var(--inset-bg-strong);
 }
 
-.experience-card,
-.knowledge-card,
-.result-card,
-.template-card {
+.result-card {
   padding: 16px;
 }
 
-.experience-card + .experience-card,
-.knowledge-card + .knowledge-card,
 .result-card + .result-card {
   margin-top: 14px;
 }
@@ -770,8 +632,6 @@ onMounted(() => {
 }
 
 .template-card p,
-.knowledge-content,
-.multiline,
 .result-item p {
   white-space: pre-wrap;
   line-height: 1.7;
@@ -798,7 +658,6 @@ onMounted(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.config-item,
 .mini-card,
 .info-grid > div {
   padding: 14px;
@@ -807,7 +666,6 @@ onMounted(() => {
   border: 1px solid var(--border-color);
 }
 
-.config-item span,
 .mini-card span,
 .info-grid span {
   display: block;
@@ -816,14 +674,12 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.config-item strong,
 .mini-card strong,
 .info-grid strong {
   color: var(--text-color);
   font-size: 15px;
 }
 
-.knowledge-top p,
 .result-item span,
 .result-item small {
   margin: 4px 0 0;
@@ -856,25 +712,11 @@ onMounted(() => {
 .status-tag,
 .template-style-tag,
 .knowledge-hit-tag,
-.skill-tag {
-  border: 1px solid rgba(90, 116, 170, 0.28) !important;
-  color: #dfe8ff !important;
-}
-
-.status-tag {
-  background: rgba(45, 91, 255, 0.16) !important;
-}
-
-.template-style-tag {
-  background: rgba(59, 108, 255, 0.18) !important;
-}
-
-.knowledge-hit-tag {
-  background: rgba(38, 84, 170, 0.18) !important;
-}
-
-.skill-tag {
-  background: rgba(32, 112, 132, 0.2) !important;
+.skill-tag,
+.count-tag {
+  border: 1px solid var(--border-color) !important;
+  background: var(--inset-bg-strong) !important;
+  color: var(--text-color) !important;
 }
 
 .result-item + .result-item {
@@ -912,7 +754,6 @@ onMounted(() => {
   .result-header,
   .section-title,
   .card-tools,
-  .knowledge-top,
   .card-head,
   .template-title,
   .result-actions,

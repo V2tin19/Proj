@@ -76,6 +76,21 @@ export interface ResumeSetting {
   padding_top_bottom: number;  // 上下边距
 }
 
+/**
+ * 智能体生成策略与补充信息:随简历档案一起保存,
+ * 不同岗位档案可各自记忆目标关键词/模板偏好等。
+ */
+export interface AgentConfig {
+  templateId: string;      // 提示词模板ID
+  targetRole: string;      // 目标岗位关键词
+  targetIndustry: string;  // 求职方向 / 行业
+  ranking: string;         // 成绩 / 排名
+  courses: string;         // 核心课程
+  interests: string;       // 兴趣爱好
+  enableRag: boolean;      // 知识库检索增强
+  wordCount: number;       // 简历正文字数控制
+}
+
 export interface ResumeState {
   personalInfo: PersonalInfo;
   education: Education[];
@@ -88,4 +103,5 @@ export interface ResumeState {
   currentId: number;
   isFirstVisit: boolean;
   resumeSetting: ResumeSetting;
+  agentConfig: AgentConfig;
 }

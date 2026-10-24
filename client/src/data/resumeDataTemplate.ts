@@ -82,5 +82,16 @@ export const resumeTemplate = {
     currentTemplate: "202501",
     padding_top_bottom: 4,
     padding_left_right: 15
+  },
+  // 智能体生成策略(随档案保存;旧数据缺失时由 store 浅合并自动补齐)
+  agentConfig: {
+    templateId: '',
+    targetRole: '',
+    targetIndustry: '',
+    ranking: '',
+    courses: '',
+    interests: '',
+    enableRag: true,
+    wordCount: 800
   }
 } as const;

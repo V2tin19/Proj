@@ -90,6 +90,7 @@ export const useResumeStore = defineStore('resume', {
         try {
           const jsonData = JSON.parse(event.target?.result as string);
           this.$state = jsonData; // 直接覆盖 Pinia 状态
+          this.ensureAgentConfig(); // 旧导出文件可能缺 agentConfig
           this.saveToLocalStorage(); // 保存到 localStorage
           message.success('数据导入成功！');
         } catch (error) {
@@ -112,11 +113,17 @@ export const useResumeStore = defineStore('resume', {
         const response = await fetch('/resumeData.json');
         const data = await response.json();
         this.$state = { ...data, isFirstVisit: false }; // 保持 isFirstVisit
+        this.ensureAgentConfig(); // 示例数据不含 agentConfig,补默认值
         this.saveToLocalStorage();
         message.success('数据已自动填充');
       } catch (error) {
         message.error('加载数据失败');
       }
+    },
+    // 整体替换 $state 后兜底:agentConfig 缺失/不完整时补默认值
+    ensureAgentConfig() {
+      const defaults = JSON.parse(JSON.stringify(resumeTemplate.agentConfig));
+      this.agentConfig = { ...defaults, ...(this.agentConfig || {}) };
     },
     // 保存到 localStorage
     saveToLocalStorage() {

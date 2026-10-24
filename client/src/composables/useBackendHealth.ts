@@ -7,7 +7,14 @@ import { getBackendHealth } from '../api/agentAPI';
  */
 export type BackendStatus = 'unknown' | 'ok' | 'down';
 
+export interface BackendHealthInfo {
+  ok: boolean;
+  now: string;
+  provider: string;
+}
+
 const status = ref<BackendStatus>('unknown');
+const info = ref<BackendHealthInfo | null>(null);
 let started = false;
 let probing = false;
 let timer: ReturnType<typeof setInterval> | undefined;
@@ -16,9 +23,10 @@ async function probe() {
   if (probing) return;
   probing = true;
   try {
-    await getBackendHealth();
+    info.value = await getBackendHealth();
     status.value = 'ok';
   } catch {
+    info.value = null;
     status.value = 'down';
   } finally {
     probing = false;
@@ -48,5 +56,5 @@ export function useBackendHealth() {
     started = false;
   };
 
-  return { status, refresh: probe, start, stop };
+  return { status, info, refresh: probe, start, stop };
 }
