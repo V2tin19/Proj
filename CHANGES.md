@@ -1,3 +1,5 @@
+> **[已归档 2026-10]** 重构期(phase0-5)变更清单。此后的演进见 git log 与 [HANDOVER.md](HANDOVER.md)。
+
 # 重构变更清单(相对前后端分支基线)
 
 > **基线**:`origin/backend-dev`(后端)与 `origin/frontend-dev`(前端)在合并时刻的 HEAD。

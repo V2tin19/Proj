@@ -18,3 +18,4 @@ frontend/dist/
 
 # 发行包构建产物
 dist-release/
+.zcode/

@@ -2,13 +2,19 @@
 
 基于大模型的学生个人简历撰写智能体。用户填写个人信息、选择模板，系统通过 LLM（DeepSeek/Qwen）自动生成排版精美的简历，支持 PDF/Word 导出。
 
+> **文档导航**:交接与运维事实 → [HANDOVER.md](HANDOVER.md) · 部署/升级/排障 → [DEPLOYMENT.md](DEPLOYMENT.md) ·
+> API 契约 → [backend-api.md](backend-api.md) / [frontend-api.md](frontend-api.md) · Linux 部署细节 → [deploy/README-DEPLOY.md](deploy/README-DEPLOY.md)
+
 ## 1. 功能
 
-- **简历生成**：5 种提示词模板（简约校招、商务正式、创意亮点、技术研发、升学科研），LLM 自动生成文案
+- **简历生成**：5 种提示词模板（简约校招、商务正式、创意亮点、技术研发、升学科研），LLM 自动生成文案；未配置模型时本地回退可用
+- **简历档案**：一人多套简历（按岗位），一键切换；匿名存本机、登录后云端同步（多账号隔离）
 - **RAG 知识库**：上传优秀简历文档，文本分块 + 向量/关键词检索（SQLite 存储），生成时注入相关上下文
-- **在线预览**：网页内直接预览简历，支持 PDF/Word 下载
+- **在线预览**：网页内直接预览简历（5 套模板、分区拖拽排序、主题色/字号可调），PDF/Word 导出
 - **AI 对话**：SSE 流式传输，Web Worker 处理，实时交互
-- **访问控制**：可选访问口令（`X-Access-Code`），保护后端 LLM 密钥
+- **账号体系**：自助注册/登录、令牌 7 天滑动过期、失败锁定；浅色/深色/跟随系统三态主题
+- **运营后台**（admin）：模型服务在线配置（热生效免重启）、用户管理（禁用/重置密码）、使用统计、审计日志
+- **多端**：浏览器（服务端托管）；Windows 桌面端（Tauri，安装包内嵌后端，双击即用）；Android/Linux 为骨架
 - **单进程部署**：后端直接托管前端页面，一个端口、一个进程、零外部依赖
 
 ## 2. 技术栈
@@ -58,7 +64,9 @@ sudo ./deploy/install.sh                    # systemd 安装自启;无 root 用 
 ```
 
 Windows 包在 Windows 机器上执行 `backend\scripts\build_release.ps1` 产出,
-部署用 `deploy\windows\install.ps1`。详见 [deploy/README-DEPLOY.md](deploy/README-DEPLOY.md)。
+部署用 `deploy\windows\install.ps1`;**桌面安装包**(Tauri,内嵌后端,推荐)
+用 `cd client && npx tauri build` 产出 NSIS exe。
+详见 [DEPLOYMENT.md](DEPLOYMENT.md) 与 [deploy/README-DEPLOY.md](deploy/README-DEPLOY.md)。
 
 ### 4.2 本地开发
 

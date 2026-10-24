@@ -682,3 +682,42 @@ LLM_MODEL=qwen2.5:7b
 | `AUTH_INVITE_CODE`  | 空       | invite 模式的邀请码                         |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | 空 | 首次启动创建运营者账号(知识库管理)    |
 | `ACCESS_CODE`       | 空       | [legacy] 旧共享口令,迁移期兼容,待移除      |
+
+---
+
+## 10. 简历档案(2026-10 新增,登录用户)
+
+多套简历的保存/切换;匿名客户端存浏览器 localStorage,登录后云端为唯一事实源(登录时本机档案自动上传合并)。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/profiles` | 档案元数据列表(不含内容),按更新时间倒序 |
+| POST | `/api/profiles` | 新建 `{name(1-50), remark?, data}` → 201 含完整档案;`data` 为简历快照(7 分区+sectionOrder+resumeSetting+agentConfig) |
+| GET | `/api/profiles/{id}` | 档案详情(含 data) |
+| PUT | `/api/profiles/{id}` | 更新 name/remark/data(均可选,Key 不回传) |
+| DELETE | `/api/profiles/{id}` | `{"removed": true}` |
+
+约束:按账号隔离(跨用户访问一律 404);上限 50 份/用户;单份 data ≤512KB;匿名 401(不区分 AUTH_MODE)。
+
+## 11. 模型服务配置(2026-10 新增,admin)
+
+在线配置 LLM,保存即热生效(覆写 settings,免重启)。分层:runtime 覆盖 > .env。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/llm-config` | `{apiUrl, model, hasKey, keyMasked, source: env|runtime}`,Key 明文永不回传 |
+| PUT | `/api/llm-config` | `{apiUrl(必填 http/s), apiKey?(留空=沿用旧值), model(必填)}` |
+| DELETE | `/api/llm-config` | 清除在线配置,恢复 .env |
+| POST | `/api/llm-config/test` | 候选配置连通性探测(10s 超时)→ `{ok, message, latencyMs}` |
+
+## 12. 运营后台(2026-10 新增,admin)
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/admin/users` | 用户列表(角色/禁用状态/活跃会话数/注册时间) |
+| PATCH | `/api/admin/users/{id}/status` | `{disabled: bool}` 禁用/启用;禁用即时生效;禁用自己 400 |
+| POST | `/api/admin/users/{id}/reset-password` | `{newPassword}`(≥8 位含字母数字) |
+| GET | `/api/admin/stats` | 近30天各类型事件计数、llm/local 占比、14 天逐日生成、Top 用户、用户总数/禁用数 |
+| GET | `/api/admin/events?limit=&offset=&type=` | 审计日志倒序(埋点:generate/chat/export_docx/register/login/llm_config_*/user_*/password_*) |
+
+另:`POST /api/auth/change-password` `{oldPassword, newPassword}`(登录用户改自己,验旧密码)。
