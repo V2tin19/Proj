@@ -13,20 +13,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useResumeStore } from '../../../store';
 import AIEnhancePopover from './AIEnhancePopover.vue';
 // 获取 store 实例
 const resumeStore = useResumeStore();
 
-// 将 summary 直接绑定为 ref 类型，便于修改
-const summary = ref(resumeStore.summary);
-
-// 监听 summary 的变化并保存到 store
-watch(summary, (newValue) => {
-  resumeStore.summary = newValue;
-  resumeStore.saveToLocalStorage();
-}, { immediate: true });
+// 直接双向绑定 store,档案切换(applyProfile 整档替换)时能跟随更新
+const summary = computed({
+  get: () => resumeStore.summary,
+  set: (value: string) => {
+    resumeStore.summary = value;
+  }
+});
 </script>
 
 <style scoped>

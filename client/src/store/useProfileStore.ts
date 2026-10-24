@@ -88,7 +88,9 @@ export const useProfileStore = defineStore('profile', () => {
 
   function snapshotCurrent(): ProfileSnapshot {
     const state = resumeStore.$state;
-    return {
+    // 必须深拷贝:直接引用会让多份档案的 data 与 store 状态互相别名,
+    // 编辑一份会悄悄改写其他档案
+    return JSON.parse(JSON.stringify({
       personalInfo: state.personalInfo,
       education: state.education,
       workExperience: state.workExperience,
@@ -99,7 +101,7 @@ export const useProfileStore = defineStore('profile', () => {
       sectionOrder: state.sectionOrder,
       resumeSetting: state.resumeSetting,
       agentConfig: state.agentConfig
-    };
+    }));
   }
 
   // ------------------------------------------------------------ 保存(防抖)

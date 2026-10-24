@@ -216,17 +216,19 @@ export const useResumeStore = defineStore('resume', {
 
     // 载入一份简历档案快照:整档替换内容与设置,缺省字段回退模板默认值
     applyProfile(data: Partial<ProfileSnapshot>) {
+      // 深拷贝入档,避免 store 与档案存储(如 localStorage 表)共享引用
+      const source = JSON.parse(JSON.stringify(data));
       const defaults = JSON.parse(JSON.stringify(resumeTemplate));
-      this.personalInfo = { ...defaults.personalInfo, ...(data.personalInfo || {}) };
-      this.education = data.education ?? defaults.education;
-      this.workExperience = data.workExperience ?? defaults.workExperience;
-      this.skills = data.skills ?? defaults.skills;
-      this.projects = data.projects ?? defaults.projects;
-      this.honors = data.honors ?? defaults.honors;
-      this.summary = data.summary ?? '';
-      this.sectionOrder = normalizeSectionOrder(data.sectionOrder ?? defaults.sectionOrder);
-      this.resumeSetting = { ...defaults.resumeSetting, ...(data.resumeSetting || {}) };
-      this.agentConfig = { ...defaults.agentConfig, ...(data.agentConfig || {}) };
+      this.personalInfo = { ...defaults.personalInfo, ...(source.personalInfo || {}) };
+      this.education = source.education ?? defaults.education;
+      this.workExperience = source.workExperience ?? defaults.workExperience;
+      this.skills = source.skills ?? defaults.skills;
+      this.projects = source.projects ?? defaults.projects;
+      this.honors = source.honors ?? defaults.honors;
+      this.summary = source.summary ?? '';
+      this.sectionOrder = normalizeSectionOrder(source.sectionOrder ?? defaults.sectionOrder);
+      this.resumeSetting = { ...defaults.resumeSetting, ...(source.resumeSetting || {}) };
+      this.agentConfig = { ...defaults.agentConfig, ...(source.agentConfig || {}) };
       this.currentId = nextIdFromGeneratedResume({
         personalInfo: this.personalInfo,
         education: this.education,
