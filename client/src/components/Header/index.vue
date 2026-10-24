@@ -26,15 +26,44 @@
             AI深度交流
           </router-link>
         </li>
-        <li ref="setting">
-          <router-link to="/setting">
+        <!-- 移动端底栏入口:打开账号与设置抽屉 -->
+        <li class="mobile-only">
+          <a role="button" tabindex="0" @click="drawerOpen = true" @keydown.enter="drawerOpen = true">
             <SvgIcon iconName="setting" />
-            网站配置
-          </router-link>
+            我的
+          </a>
         </li>
       </ul>
     </nav>
+
+    <!-- 桌面端右上角用户区 -->
+    <div class="user-area">
+      <a-dropdown :trigger="['click']">
+        <button ref="userMenuRef" class="user-chip" type="button">
+          <span class="user-avatar">{{ session ? session.username.slice(0, 1).toUpperCase() : '?' }}</span>
+          <span class="user-name">{{ session ? session.username : '未登录' }}</span>
+        </button>
+        <template #overlay>
+          <a-menu @click="onMenuClick">
+            <a-menu-item key="settings">
+              <setting-outlined />
+              账号与设置
+            </a-menu-item>
+            <a-menu-item v-if="session" key="logout">
+              <logout-outlined />
+              退出登录
+            </a-menu-item>
+            <a-menu-item v-else key="auth">
+              <user-outlined />
+              注册 / 登录
+            </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
+    </div>
   </header>
+
+  <UserSettingsDrawer v-model:open="drawerOpen" />
 
   <a-tour
     v-model:open="tourOpen"
@@ -49,21 +78,47 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import type { TourProps } from "ant-design-vue";
+import { SettingOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue';
 import SvgIcon from "../SvgIcon.vue";
+import UserSettingsDrawer from "../UserSettingsDrawer.vue";
 import { useResumeStore } from "../../store/useResumeStore";
+import { getSessionUser, clearSession, type SessionUser } from "../../utils/auth";
 
 const store = useResumeStore();
-const setting = ref(null);
+const route = useRoute();
+const router = useRouter();
 const templateStore = ref(null);
+const userMenuRef = ref(null);
 const tourOpen = ref(false);
+const drawerOpen = ref(false);
+// Header 常驻挂载,登录/退出后靠路由变化刷新显示
+const session = ref<SessionUser | null>(getSessionUser());
+watch(
+  () => route.fullPath,
+  () => {
+    session.value = getSessionUser();
+  }
+);
+
+const onMenuClick = ({ key }: { key: string | number }) => {
+  if (key === 'settings') {
+    drawerOpen.value = true;
+  } else if (key === 'logout') {
+    drawerOpen.value = true;
+  } else if (key === 'auth') {
+    clearSession();
+    router.push({ name: 'auth' });
+  }
+};
 
 const tourSteps: TourProps["steps"] = [
   {
-    title: "网站配置",
-    description: "右上角可注册/登录账号;在网站配置中可切换服务端地址与主题外观（支持跟随系统）。",
-    target: () => setting.value,
+    title: "账号与设置",
+    description: "右上角账号入口可注册/登录账号;在账号与设置中可切换服务端地址与主题外观(支持跟随系统)。",
+    target: () => userMenuRef.value,
   },
   {
     title: "选择模板",
@@ -106,7 +161,7 @@ onMounted(() => {
 }
 
 .navbar nav {
-  width: min(100%, 980px);
+  width: min(100%, 880px);
 }
 
 .navbar nav ul {
@@ -132,6 +187,7 @@ onMounted(() => {
   transition: all 0.22s;
   border-radius: 12px;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .navbar nav ul li a:hover {
@@ -157,6 +213,58 @@ onMounted(() => {
 
 .navbar :deep(.svg-icon) {
   font-size: 18px;
+}
+
+/* 桌面端用户区 */
+.user-area {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-card-color);
+  color: var(--text-color);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.user-chip:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.user-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-only {
+  display: none;
 }
 
 @media (max-width: 768px) {
@@ -199,6 +307,14 @@ onMounted(() => {
 
   .navbar :deep(.svg-icon) {
     font-size: 20px;
+  }
+
+  .user-area {
+    display: none;
+  }
+
+  .mobile-only {
+    display: list-item;
   }
 }
 </style>
