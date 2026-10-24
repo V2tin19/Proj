@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
-import { hasSession, hasSkippedAuth } from "@/utils/auth";
+import { getSessionUser, hasSession, hasSkippedAuth } from "@/utils/auth";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -25,6 +25,12 @@ const routes: Array<RouteRecordRaw> = [
     name: "setting",
     component: () => import("@/views/setting/index.vue"),
     meta: { title: "AI简历 - 网站配置" }
+  },
+  {
+    path: "/admin",
+    name: "admin",
+    component: () => import("@/views/admin/index.vue"),
+    meta: { title: "AI简历 - 运营后台" }
   },
   {
     path: "/aiDeep",
@@ -54,6 +60,10 @@ const router = createRouter({
 // (服务端 AUTH_MODE=optional 时可"先逛逛";required 模式下接口 401 会自动回到本页)
 router.beforeEach((to) => {
   if (to.name === "auth") return true;
+  // 运营后台仅 admin 可进(前端引导;接口层另有 admin 鉴权兜底)
+  if (to.name === "admin" && getSessionUser()?.role !== "admin") {
+    return { name: "auth", query: { redirect: to.fullPath } };
+  }
   if (hasSession() || hasSkippedAuth()) return true;
   return { name: "auth", query: to.fullPath !== "/" ? { redirect: to.fullPath } : {} };
 });

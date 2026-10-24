@@ -52,6 +52,10 @@
         </button>
         <template #overlay>
           <a-menu @click="onMenuClick">
+            <a-menu-item v-if="isAdmin" key="admin">
+              <dashboard-outlined />
+              运营后台
+            </a-menu-item>
             <a-menu-item key="settings">
               <setting-outlined />
               账号与设置
@@ -85,10 +89,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { TourProps } from "ant-design-vue";
-import { SettingOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue';
+import { SettingOutlined, LogoutOutlined, UserOutlined, DashboardOutlined } from '@ant-design/icons-vue';
 import SvgIcon from "../SvgIcon.vue";
 import UserSettingsDrawer from "../UserSettingsDrawer.vue";
 import { useResumeStore } from "../../store/useResumeStore";
@@ -105,6 +109,7 @@ const tourOpen = ref(false);
 const drawerOpen = ref(false);
 // Header 常驻挂载,登录/退出后靠路由变化刷新显示
 const session = ref<SessionUser | null>(getSessionUser());
+const isAdmin = computed(() => session.value?.role === 'admin');
 watch(
   () => route.fullPath,
   () => {
@@ -115,6 +120,8 @@ watch(
 const onMenuClick = ({ key }: { key: string | number }) => {
   if (key === 'settings') {
     drawerOpen.value = true;
+  } else if (key === 'admin') {
+    router.push({ name: 'admin' });
   } else if (key === 'logout') {
     drawerOpen.value = true;
   } else if (key === 'auth') {

@@ -178,6 +178,64 @@ export async function testLlmConfig(payload: { apiUrl?: string; apiKey?: string;
   return response.data as LlmTestResult;
 }
 
+// ------------------------------------------------------------------ 运营后台(admin)
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  email: string;
+  role: "user" | "admin";
+  disabled: boolean;
+  createdAt: string;
+  activeTokens: number;
+}
+
+export interface AdminStats {
+  last30Days: Record<string, number>;
+  generateProviders: Record<string, number>;
+  generateDaily14d: Array<{ day: string; count: number }>;
+  topUsers: Array<{ username: string; events: number }>;
+}
+
+export interface AdminEvent {
+  id: number;
+  at: string;
+  userId: number | null;
+  username: string;
+  type: string;
+  detail: string;
+}
+
+export async function fetchAdminUsers() {
+  const response = await apiClient.get("/admin/users");
+  return response.data as AdminUser[];
+}
+
+export async function setUserDisabled(id: number, disabled: boolean) {
+  const response = await apiClient.patch(`/admin/users/${id}/status`, { disabled });
+  return response.data as AdminUser[];
+}
+
+export async function resetUserPassword(id: number, newPassword: string) {
+  const response = await apiClient.post(`/admin/users/${id}/reset-password`, { newPassword });
+  return response.data as { ok: boolean };
+}
+
+export async function fetchAdminStats() {
+  const response = await apiClient.get("/admin/stats");
+  return response.data as AdminStats;
+}
+
+export async function fetchAdminEvents(limit = 100, offset = 0) {
+  const response = await apiClient.get("/admin/events", { params: { limit, offset } });
+  return response.data as AdminEvent[];
+}
+
+export async function changeMyPassword(oldPassword: string, newPassword: string) {
+  const response = await apiClient.post("/auth/change-password", { oldPassword, newPassword });
+  return response.data as { ok: boolean };
+}
+
 // ------------------------------------------------------------------ 业务
 
 export async function getBackendHealth() {
