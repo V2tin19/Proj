@@ -41,3 +41,4 @@ coverage/
 .claude
 # Tauri 打包用的后端运行时暂存(由 prepare-backend.ps1 生成)
 src-tauri/resources/
+src-tauri/target/
