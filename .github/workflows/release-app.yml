@@ -33,6 +33,17 @@ jobs:
         with:
           workspaces: client/src-tauri
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Prepare Backend Runtime (venv for staging)
+        shell: pwsh
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/Scripts/python.exe -m pip install --disable-pip-version-check -r backend/requirements.txt
+
       - name: Install Frontend Dependencies
         working-directory: client
         run: npm ci
